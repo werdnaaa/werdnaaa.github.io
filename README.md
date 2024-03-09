@@ -19,11 +19,20 @@ Sky Lagoon Hot Spring offers a massive main hot bath, a cold plunge at 2 degrees
 
 ![image](https://github.com/werdnaaa/werdnaaa.github.io/assets/123143270/ef66be34-515e-4704-b4d7-07e86f391270)
 
-One of the most interesting feelings ever is sitting in the cold plunge for 20 seconds, then going back to the hot water. The entire body feels numb and simultaneously electrified with the sudden 38 degree temperature change, which is supposed to be a 'natural shock treatment' of sorts that has various health benefits.
+One of the most interesting feelings ever is sitting in the cold plunge for 20 seconds, then going back to the hot water. The entire body feels numb and simultaneously electrified with the sudden 38 degree temperature change, which is supposed to be a 'natural shock treatment' of sorts that has various health benefits including circulation, skin, etc.
 
 ![image](https://github.com/werdnaaa/werdnaaa.github.io/assets/123143270/35afd2c5-ede4-4e92-b665-10381a5899f6)
 
-After the hot spring it was time for lunch!
+After the hot spring it was time for lunch! We headed to Icelandic Street Food in Reykjavik which is a well-known destination for cheap and authentic eats. By American standards, the food was expensive at around $25 per head, but this is incredibly considered reasonable by Icelandic standards! The notable dishes include: Kjötsúpa (Traditional lamb stew), Plokkfiskur (Creamy mashed potato with cod) and other soups, all served in large bread bowls with unlimited refills! Needless to say, we left feeling utterly stuffed!
+
+![image](https://github.com/werdnaaa/werdnaaa.github.io/assets/123143270/29f78a75-4b22-49e8-9993-7fcf7deaeb40)
+![image](https://github.com/werdnaaa/werdnaaa.github.io/assets/123143270/7d350c30-9c9c-4b6b-b1c8-5e13d626e056)
+
+Following this, it was full-steam down the main Icelandic highway, headed out of the city and into the wilderness to begin our adventure proper. Our first stop was Kerid crater, which is an extinct cone volcano which erupted and emptied its magma reserve. Once the magma was depleted, the weight of the cone collapsed into the empty magma chamber and created a depression in the ground which filled with water, forming a magnificent crater lake. We dorned our crampons and trudged down to the crater, which was completely frozen into a magnificent 'ice-skating rink' of sorts! Definitely not something you can see anywhere else, a beautiful frozen lake in an extinct volcano!
+
+![image](https://github.com/werdnaaa/werdnaaa.github.io/assets/123143270/04271a11-79e6-4504-abb5-e90802c4ad6a)
+![image](https://github.com/werdnaaa/werdnaaa.github.io/assets/123143270/f3baff08-6a1d-4d4a-ba7f-89ec1708fbe1)
+
 
 
 
