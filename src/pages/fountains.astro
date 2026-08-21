@@ -1,0 +1,204 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import VideoHero from '../components/VideoHero.astro';
+import FountainTimeline from '../components/FountainTimeline.astro';
+
+const milestones = await getCollection('fountains', ({ data }) => !data.draft);
+
+// Sort chronologically, with the "future" entry pinned to the end.
+const rank = (year: number | 'future') => (year === 'future' ? Infinity : year);
+milestones.sort((a, b) => rank(a.data.year) - rank(b.data.year));
+
+// Placeholder spec table — replace the values, or delete the block.
+const specs = [
+  { label: 'Nozzles', value: '—' },
+  { label: 'Pumps', value: '—' },
+  { label: 'Control', value: '—' },
+  { label: 'Lighting', value: '—' },
+  { label: 'Audio sync', value: '—' },
+  { label: 'Water volume', value: '—' },
+];
+
+const systems = [
+  {
+    title: 'Hydraulics',
+    body: 'Placeholder — describe the pump layout, manifolds, nozzle types and how flow is regulated across the display.',
+  },
+  {
+    title: 'Control electronics',
+    body: 'Placeholder — the controller, drivers, valve switching and how everything is wired back to the show computer.',
+  },
+  {
+    title: 'Show software',
+    body: 'Placeholder — how a track is analysed, how cues are authored, and how playback stays in sync with the audio.',
+  },
+  {
+    title: 'Lighting',
+    body: 'Placeholder — fixture choice, colour mixing, and how lighting cues are tied to the same timeline as the water.',
+  },
+];
+---
+
+<Base
+  title="Fountains"
+  description="A homemade musical dancing fountain display — build documentation, systems and a year-by-year timeline."
+  overlayNav
+>
+  <VideoHero
+    eyebrow="Fountains"
+    title="Musical Dancing Fountains"
+    subtitle="A homemade water, light and sound display — built, rebuilt and refined since 2016."
+    height="full"
+  >
+    <a class="btn btn--light" href="#timeline">See the timeline</a>
+  </VideoHero>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="intro reveal">
+        <p class="eyebrow">Overview</p>
+        <h2>Water, light and music on one clock.</h2>
+        <p class="lede">
+          Placeholder introduction. Describe the display in two or three
+          sentences — what it does, roughly how big it is, and what makes it
+          interesting to build.
+        </p>
+        <p class="muted">
+          Replace this paragraph with the longer story: what started it, what
+          the hardest engineering problem turned out to be, and where it stands
+          today.
+        </p>
+      </div>
+
+      <dl class="specs">
+        {specs.map((spec) => (
+          <div class="spec reveal">
+            <dt class="spec__label">{spec.label}</dt>
+            <dd class="spec__value">{spec.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  </section>
+
+  <section class="section section--alt" id="timeline">
+    <div class="wrap">
+      <header class="block-head reveal">
+        <div>
+          <p class="eyebrow">Timeline</p>
+          <h2>Year by year</h2>
+        </div>
+        <p class="block-head__note muted">
+          Drag the slider, or use the arrow keys. Solid markers are years with
+          an entry.
+        </p>
+      </header>
+
+      <div class="reveal">
+        <FountainTimeline milestones={milestones} startYear={2016} />
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <p class="eyebrow reveal">Documentation</p>
+      <h2 class="reveal">Systems</h2>
+
+      <div class="grid grid--2 systems">
+        {systems.map((system) => (
+          <article class="system reveal">
+            <h3 class="system__title">{system.title}</h3>
+            <p class="muted">{system.body}</p>
+          </article>
+        ))}
+      </div>
+
+      <p class="note">
+        Longer write-ups, wiring diagrams and photos go here. Drop images into
+        <code>/public/img</code> and short loops into <code>/public/video</code>.
+      </p>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .intro { max-width: 62ch; }
+  .intro h2 { margin-bottom: 0.5em; text-wrap: balance; }
+  .intro .lede { margin-bottom: 1em; }
+
+  .specs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px;
+    margin: clamp(2.5rem, 6vw, 4rem) 0 0;
+    background: var(--line);
+    border: 1px solid var(--line);
+  }
+
+  .spec {
+    padding: clamp(1.2rem, 3vw, 1.8rem);
+    background: var(--bg);
+  }
+
+  .spec__label {
+    margin-bottom: 0.4em;
+    font-size: var(--step--1);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .spec__value {
+    margin: 0;
+    font-size: var(--step-1);
+    font-weight: 700;
+  }
+
+  .block-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.25rem;
+    margin-bottom: clamp(2rem, 5vw, 3rem);
+  }
+
+  .block-head h2 { margin-bottom: 0; }
+
+  .block-head__note {
+    margin: 0;
+    max-width: 34ch;
+    font-size: var(--step--1);
+  }
+
+  .systems { margin-top: clamp(2rem, 4vw, 3rem); }
+
+  .system {
+    padding: clamp(1.5rem, 3vw, 2rem);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+  }
+
+  .system__title {
+    padding-bottom: 0.6em;
+    margin-bottom: 0.8em;
+    border-bottom: 1px solid var(--line-soft);
+    font-size: var(--step-1);
+  }
+
+  .note {
+    max-width: var(--measure);
+    margin-top: clamp(2rem, 4vw, 3rem);
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+    font-size: var(--step--1);
+    color: var(--text-muted);
+  }
+
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+  }
+</style>

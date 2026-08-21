@@ -1,0 +1,273 @@
+---
+/**
+ * Full-bleed hero with a looping background video.
+ *
+ * Autoplay only works when the video is `muted` AND `playsinline` — miss
+ * either and iOS Safari silently refuses to start. `poster` paints instantly
+ * while the file downloads, and is the *only* thing shown when the visitor
+ * has asked for reduced motion or when no `src` has been added yet, so the
+ * page looks finished before any footage exists.
+ */
+interface Props {
+  src?: string;
+  poster?: string;
+  /** Small caps line ABOVE the headline. */
+  eyebrow?: string;
+  title: string;
+  /** Small caps line BELOW the headline, for a secondary identity line. */
+  kicker?: string;
+  subtitle?: string;
+  /**
+   * Hold the subtitle on a single line. The type scales with the viewport so
+   * a long line always fits, and falls back to wrapping on narrow phones
+   * where no readable size would.
+   */
+  subtitleNoWrap?: boolean;
+  height?: 'full' | 'tall' | 'short';
+  align?: 'center' | 'left';
+}
+
+const {
+  src,
+  poster,
+  eyebrow,
+  title,
+  kicker,
+  subtitle,
+  subtitleNoWrap = false,
+  height = 'full',
+  align = 'center',
+} = Astro.props;
+---
+
+<section class:list={['hero', `hero--${height}`, `hero--${align}`]}>
+  <div class="hero__media">
+    {
+      src ? (
+        <video
+          class="hero__video"
+          poster={poster}
+          autoplay
+          muted
+          loop
+          playsinline
+          preload="metadata"
+          aria-hidden="true"
+          tabindex="-1"
+        >
+          <source src={src} type="video/mp4" />
+        </video>
+      ) : poster ? (
+        <img class="hero__video" src={poster} alt="" aria-hidden="true" />
+      ) : (
+        <div class="hero__placeholder" aria-hidden="true" />
+      )
+    }
+    <div class="hero__scrim" aria-hidden="true"></div>
+  </div>
+
+  <div class="wrap hero__content">
+    {eyebrow && <p class="hero__eyebrow">{eyebrow}</p>}
+    <h1 class="hero__title">{title}</h1>
+    {kicker && <p class="hero__kicker">{kicker}</p>}
+    {
+      subtitle && (
+        <p class:list={['hero__subtitle', { 'hero__subtitle--nowrap': subtitleNoWrap }]}>
+          {subtitle}
+        </p>
+      )
+    }
+    <div class="hero__actions"><slot /></div>
+  </div>
+
+  <div class="hero__hint" aria-hidden="true"><span></span></div>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    color: #fff;
+    isolation: isolate;
+  }
+
+  .hero--full { min-height: 100svh; }
+  .hero--tall { min-height: 72svh; }
+  .hero--short { min-height: 46svh; }
+
+  .hero__media {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+  }
+
+  .hero__video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* Stand-in until real footage is dropped into /public/video. */
+  .hero__placeholder {
+    width: 100%;
+    height: 100%;
+    background:
+      radial-gradient(ellipse at 30% 20%, #4a4a52 0%, transparent 55%),
+      linear-gradient(160deg, #2c2c31 0%, #17171a 60%, #0d0d0f 100%);
+  }
+
+  /* Keeps headline contrast legible over bright frames. */
+  .hero__scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.45) 0%,
+      rgba(0, 0, 0, 0.2) 35%,
+      rgba(0, 0, 0, 0.55) 100%
+    );
+  }
+
+  .hero__content {
+    position: relative;
+    z-index: 1;
+    /* Bottom padding has to clear the scroll hint (42px tall, 1.75rem up),
+       otherwise a wrapped button row collides with it. */
+    padding-block: calc(var(--nav-h) + 2rem) clamp(6.5rem, 14vh, 9rem);
+    text-align: center;
+  }
+
+  .hero--left .hero__content { text-align: left; }
+
+  .hero__eyebrow {
+    margin: 0 0 1em;
+    font-size: var(--step--1);
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    opacity: 0.85;
+  }
+
+  .hero__title {
+    max-width: 18ch;
+    margin-inline: auto;
+    margin-bottom: 0.4em;
+    font-size: var(--step-4);
+    text-wrap: balance;
+  }
+
+  .hero--left .hero__title { margin-inline: 0; }
+
+  /* Secondary identity line, sits under the headline. */
+  .hero__kicker {
+    margin: 0 0 1.1em;
+    font-size: var(--step--1);
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    opacity: 0.82;
+  }
+
+  .hero__subtitle {
+    max-width: 46ch;
+    margin-inline: auto;
+    margin-bottom: 2em;
+    font-size: var(--step-1);
+    opacity: 0.9;
+    text-wrap: pretty;
+  }
+
+  /* Single-line variant: width-relative type keeps a long line intact.
+     ~61 characters at 2.1vw stays comfortably inside the gutters. */
+  .hero__subtitle--nowrap {
+    max-width: none;
+    white-space: nowrap;
+    font-size: clamp(0.82rem, 2.1vw, 1.45rem);
+    text-wrap: nowrap;
+  }
+
+  /* Below this width no readable size fits on one line, so let it wrap. */
+  @media (max-width: 680px) {
+    .hero__subtitle--nowrap {
+      white-space: normal;
+      max-width: 32ch;
+      margin-inline: auto;
+      font-size: var(--step-0);
+      text-wrap: pretty;
+    }
+
+    .hero--left .hero__subtitle--nowrap { margin-inline: 0; }
+  }
+
+  .hero--left .hero__subtitle { margin-inline: 0; }
+
+  .hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+    justify-content: center;
+  }
+
+  .hero--left .hero__actions { justify-content: flex-start; }
+  .hero__actions:empty { display: none; }
+
+  .hero__hint {
+    position: absolute;
+    bottom: 1.75rem;
+    left: 50%;
+    translate: -50% 0;
+    width: 1px;
+    height: 42px;
+    background: rgba(255, 255, 255, 0.28);
+    overflow: hidden;
+  }
+
+  .hero__hint span {
+    display: block;
+    width: 100%;
+    height: 40%;
+    background: #fff;
+    animation: hint 2.4s var(--ease) infinite;
+  }
+
+  @keyframes hint {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(250%); }
+  }
+
+  .hero--short .hero__hint { display: none; }
+
+  @media (max-height: 520px) {
+    .hero__hint { display: none; }
+    .hero__content { padding-block: calc(var(--nav-h) + 1.5rem) 2.5rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero__hint { display: none; }
+  }
+</style>
+
+<script>
+  // Honour the OS "reduce motion" setting: freeze background video on its
+  // poster frame rather than looping it.
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  const apply = () => {
+    document.querySelectorAll<HTMLVideoElement>('.hero__video').forEach((video) => {
+      if (!(video instanceof HTMLVideoElement)) return;
+      if (reduce.matches) {
+        video.pause();
+        video.removeAttribute('autoplay');
+      } else {
+        // Some browsers reject autoplay until the element is in view; retry
+        // quietly and fall back to the poster if it still refuses.
+        video.play().catch(() => {});
+      }
+    });
+  };
+
+  apply();
+  reduce.addEventListener('change', apply);
+</script>

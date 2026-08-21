@@ -1,0 +1,228 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import VideoHero from '../components/VideoHero.astro';
+
+const flights = (await getCollection('flights', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+);
+
+const fmt = new Intl.DateTimeFormat('en-GB', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+});
+
+// Placeholder stats — swap for real numbers, or delete the block entirely.
+const stats = [
+  { value: '5"', label: 'Main class' },
+  { value: '6S', label: 'Battery' },
+  { value: '2021', label: 'Flying since' },
+  { value: '—', label: 'Best lap' },
+];
+---
+
+<Base
+  title="FPV Racing"
+  description="FPV drone racing — builds, runs and race footage."
+  overlayNav
+>
+  <VideoHero
+    eyebrow="FPV"
+    title="Drone Racing"
+    subtitle="Builds, tuning notes and raw runs. Mostly 5-inch, mostly too close to the gates."
+    height="full"
+  >
+    <a class="btn btn--light" href="#runs">Watch the runs</a>
+  </VideoHero>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="intro reveal">
+        <p class="eyebrow">The setup</p>
+        <h2>Fly, crash, solder, repeat.</h2>
+        <p class="lede">
+          Write a few lines here about how you got into FPV, what you fly, and
+          what you are chasing — race times, freestyle lines, or just the flying.
+        </p>
+      </div>
+
+      <dl class="stats">
+        {stats.map((stat) => (
+          <div class="stat reveal">
+            <dt class="stat__label">{stat.label}</dt>
+            <dd class="stat__value">{stat.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  </section>
+
+  <section class="section section--alt" id="runs">
+    <div class="wrap">
+      <p class="eyebrow reveal">Footage</p>
+      <h2 class="reveal">Runs &amp; sessions</h2>
+
+      {
+        flights.length === 0 ? (
+          <p class="muted">
+            No runs logged yet — add a markdown file to <code>src/content/flights/</code>.
+          </p>
+        ) : (
+          <div class="grid grid--2 runs">
+            {flights.map((flight) => (
+              <article class="run reveal">
+                <div class="run__media">
+                  {flight.data.embed ? (
+                    <iframe
+                      src={flight.data.embed}
+                      title={flight.data.title}
+                      loading="lazy"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowfullscreen
+                    />
+                  ) : flight.data.video ? (
+                    <video
+                      poster={flight.data.cover}
+                      controls
+                      playsinline
+                      preload="none"
+                    >
+                      <source src={flight.data.video} type="video/mp4" />
+                    </video>
+                  ) : flight.data.cover ? (
+                    <img src={flight.data.cover} alt={flight.data.title} loading="lazy" />
+                  ) : (
+                    <div class="run__empty" aria-hidden="true" />
+                  )}
+                </div>
+
+                <div class="run__body">
+                  <p class="run__meta">
+                    <span>{fmt.format(flight.data.date)}</span>
+                    {flight.data.location && (
+                      <>
+                        <span aria-hidden="true">&middot;</span>
+                        <span>{flight.data.location}</span>
+                      </>
+                    )}
+                  </p>
+                  <h3 class="run__title">{flight.data.title}</h3>
+                  {flight.data.craft && <p class="run__craft">{flight.data.craft}</p>}
+                  {flight.data.summary && <p class="muted">{flight.data.summary}</p>}
+                </div>
+              </article>
+            ))}
+          </div>
+        )
+      }
+
+      <p class="note">
+        Full-length footage belongs on YouTube or Vimeo, not in this repo — set
+        <code>embed</code> in the markdown front matter and it renders here.
+        Keep only short, compressed loops in <code>/public/video</code>.
+      </p>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .intro { max-width: 62ch; }
+  .intro h2 { margin-bottom: 0.5em; text-wrap: balance; }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px;
+    margin: clamp(2.5rem, 6vw, 4rem) 0 0;
+    background: var(--line);
+    border: 1px solid var(--line);
+  }
+
+  .stat {
+    padding: clamp(1.4rem, 3vw, 2rem);
+    background: var(--bg);
+  }
+
+  .stat__label {
+    margin-bottom: 0.4em;
+    font-size: var(--step--1);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .stat__value {
+    margin: 0;
+    font-size: var(--step-2);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .runs { margin-top: clamp(2rem, 4vw, 3rem); }
+
+  .run {
+    background: var(--bg);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .run__media {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    background: var(--bg-deep);
+  }
+
+  .run__media iframe,
+  .run__media video,
+  .run__media img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    object-fit: cover;
+  }
+
+  .run__empty {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(160deg, #2c2c31, #0d0d0f);
+  }
+
+  .run__body { padding: 1.3rem 1.5rem 1.6rem; }
+
+  .run__meta {
+    display: flex;
+    gap: 0.5em;
+    margin: 0 0 0.5em;
+    font-size: var(--step--1);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .run__title { margin-bottom: 0.25em; }
+
+  .run__craft {
+    margin-bottom: 0.7em;
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    color: var(--text-muted);
+  }
+
+  .note {
+    max-width: var(--measure);
+    margin-top: clamp(2rem, 4vw, 3rem);
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+    font-size: var(--step--1);
+    color: var(--text-muted);
+  }
+
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+  }
+</style>

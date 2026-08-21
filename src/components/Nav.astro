@@ -1,0 +1,243 @@
+---
+/**
+ * Fixed site header. Starts transparent when it sits over a video hero
+ * (`overlay`), then fades to a solid blurred bar once the page scrolls.
+ */
+interface Props {
+  overlay?: boolean;
+}
+
+const { overlay = false } = Astro.props;
+
+const links = [
+  { href: '/', label: 'Home' },
+  { href: '/about/', label: 'About' },
+  { href: '/projects/', label: 'Projects' },
+  { href: '/fpv/', label: 'FPV Racing' },
+  { href: '/fountains/', label: 'Fountains' },
+];
+
+// Mark the current section so its nav item can be highlighted.
+const path = Astro.url.pathname;
+const isCurrent = (href: string) =>
+  href === '/' ? path === '/' : path.startsWith(href);
+---
+
+<header class:list={['nav', { 'nav--overlay': overlay }]} data-nav>
+  <div class="nav__inner">
+    <a class="nav__brand" href="/">
+      <img
+        class="nav__logo"
+        src="/logo.png"
+        alt=""
+        width="110"
+        height="96"
+        decoding="async"
+      />
+      <span>WERDNAAA</span>
+    </a>
+
+    <button
+      class="nav__toggle"
+      type="button"
+      aria-expanded="false"
+      aria-controls="nav-menu"
+      aria-label="Toggle navigation"
+      data-nav-toggle
+    >
+      <span></span><span></span><span></span>
+    </button>
+
+    <nav class="nav__menu" id="nav-menu" aria-label="Primary">
+      <ul>
+        {links.map((link) => (
+          <li>
+            <a href={link.href} aria-current={isCurrent(link.href) ? 'page' : undefined}>
+              {link.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .nav {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 100;
+    height: var(--nav-h);
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid var(--line-soft);
+    transition: background-color 0.35s var(--ease), border-color 0.35s var(--ease),
+      color 0.35s var(--ease);
+  }
+
+  /* Transparent while sitting over a hero video, until .is-scrolled is set. */
+  .nav--overlay:not(.is-scrolled) {
+    background: transparent;
+    backdrop-filter: none;
+    border-bottom-color: transparent;
+    color: #fff;
+  }
+
+  .nav--overlay:not(.is-scrolled) .nav__brand,
+  .nav--overlay:not(.is-scrolled) .nav__menu a {
+    color: #fff;
+  }
+
+  .nav--overlay:not(.is-scrolled) .nav__toggle span {
+    background: #fff;
+  }
+
+  /* Safari below 18 only understands the prefixed property. A plain duplicate
+     declaration gets pruned by the CSS minifier, so gate it behind @supports,
+     which is treated as a feature query rather than a redundant repeat. */
+  @supports (-webkit-backdrop-filter: blur(1px)) {
+    .nav { -webkit-backdrop-filter: saturate(180%) blur(20px); }
+    .nav--overlay:not(.is-scrolled) { -webkit-backdrop-filter: none; }
+  }
+
+  .nav__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    height: 100%;
+    max-width: 1180px;
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+  }
+
+  .nav__brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55em;
+    font-size: var(--step-0);
+    font-weight: 700;
+    letter-spacing: 0.22em;
+  }
+
+  /* Mark sits next to the wordmark, matched to the text height.
+     This one value is the whole knob — raise or lower to taste. */
+  .nav__logo {
+    height: 1.5em;
+    width: auto;
+    flex: none;
+  }
+
+  .nav__menu ul {
+    display: flex;
+    gap: clamp(1.4rem, 3vw, 2.6rem);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .nav__menu a {
+    position: relative;
+    font-size: var(--step--1);
+    letter-spacing: 0.06em;
+    color: var(--text);
+    opacity: 0.85;
+    transition: opacity 0.2s var(--ease);
+  }
+
+  .nav__menu a:hover { opacity: 1; }
+
+  .nav__menu a[aria-current='page'] {
+    opacity: 1;
+    font-weight: 700;
+  }
+
+  .nav__toggle {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    background: none;
+    border: 0;
+    cursor: pointer;
+  }
+
+  .nav__toggle span {
+    display: block;
+    height: 1.5px;
+    width: 22px;
+    margin-inline: auto;
+    background: var(--text);
+    transition: transform 0.28s var(--ease), opacity 0.28s var(--ease);
+  }
+
+  @media (max-width: 720px) {
+    .nav__toggle { display: flex; }
+
+    .nav__menu {
+      position: fixed;
+      inset: var(--nav-h) 0 auto;
+      background: rgba(255, 255, 255, 0.97);
+        backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--line-soft);
+      transform: translateY(-12px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s var(--ease), transform 0.25s var(--ease);
+    }
+
+    .nav__menu ul {
+      flex-direction: column;
+      gap: 0;
+      padding: 0.5rem var(--gutter) 1.5rem;
+    }
+
+    .nav__menu li { border-bottom: 1px solid var(--line-soft); }
+    .nav__menu li:last-child { border-bottom: 0; }
+
+    .nav__menu a {
+      display: block;
+      padding: 1rem 0;
+      font-size: var(--step-0);
+      color: var(--text) !important;
+    }
+
+    @supports (-webkit-backdrop-filter: blur(1px)) {
+      .nav__menu { -webkit-backdrop-filter: blur(20px); }
+    }
+
+    .nav.is-open .nav__menu {
+      transform: none;
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .nav.is-open .nav__toggle span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+    .nav.is-open .nav__toggle span:nth-child(2) { opacity: 0; }
+    .nav.is-open .nav__toggle span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+  }
+</style>
+
+<script>
+  const nav = document.querySelector('[data-nav]');
+  const toggle = document.querySelector('[data-nav-toggle]');
+
+  if (nav && toggle) {
+    toggle.addEventListener('click', () => {
+      const open = nav.classList.toggle('is-open');
+      toggle.setAttribute('aria-expanded', String(open));
+    });
+  }
+
+  if (nav) {
+    // Swap the transparent hero header for the solid bar just after the fold.
+    const onScroll = () => {
+      nav.classList.toggle('is-scrolled', window.scrollY > 40);
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+  }
+</script>

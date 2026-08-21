@@ -1,0 +1,101 @@
+---
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import { SITE } from '../site';
+import '../styles/global.css';
+import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { join } from 'node:path';
+
+/**
+ * Browsers cache favicons in a store that survives a hard refresh, so a
+ * changed logo can keep showing the old icon for days. Hashing the source SVG
+ * at build time and appending it as ?v= makes each new logo a new URL, which
+ * the cache cannot serve stale. Regenerate rasters with `npm run icons`.
+ */
+const iconVersion = (() => {
+  // Resolved from the project root: this frontmatter is compiled, so
+  // import.meta.url does not point back at src/layouts/.
+  const svg = readFileSync(join(process.cwd(), 'public', 'favicon.svg'));
+  return createHash('sha256').update(svg).digest('hex').slice(0, 8);
+})();
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** Let the hero run under a transparent header (landing-style pages). */
+  overlayNav?: boolean;
+}
+
+const {
+  title,
+  description = SITE.description,
+  overlayNav = false,
+} = Astro.props;
+
+const pageTitle = title ? `${title} — ${SITE.name}` : SITE.title;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <!-- Icons: .ico covers legacy + the browser's automatic /favicon.ico
+         request, the SVG is what modern browsers actually use (and it adapts
+         to the tab-bar theme), the PNG is for iOS home screens. -->
+    <link rel="icon" href={`/favicon.ico?v=${iconVersion}`} sizes="32x32" />
+    <link rel="icon" href={`/favicon.svg?v=${iconVersion}`} type="image/svg+xml" />
+    <link rel="apple-touch-icon" href={`/apple-touch-icon.png?v=${iconVersion}`} />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#1d1d1f" />
+    <meta name="generator" content={Astro.generator} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+
+  <body class:list={{ 'has-overlay-nav': overlayNav }}>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <Nav overlay={overlayNav} />
+    <main id="main"><slot /></main>
+    <Footer />
+
+    <script>
+      // Fade sections in as they scroll into view. Anything marked .reveal is
+      // already visible if this script never runs, so JS-off degrades cleanly.
+      const targets = document.querySelectorAll('.reveal');
+
+      if (targets.length && 'IntersectionObserver' in window) {
+        const io = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (!entry.isIntersecting) return;
+              entry.target.classList.add('is-visible');
+              io.unobserve(entry.target);
+            });
+          },
+          { rootMargin: '0px 0px -12% 0px', threshold: 0.05 },
+        );
+
+        targets.forEach((el) => io.observe(el));
+      } else {
+        targets.forEach((el) => el.classList.add('is-visible'));
+      }
+    </script>
+  </body>
+</html>
+
+<style is:global>
+  /* Pages without a full-bleed hero need room for the fixed header. */
+  body:not(.has-overlay-nav) main {
+    padding-top: var(--nav-h);
+  }
+</style>

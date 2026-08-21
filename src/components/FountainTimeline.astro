@@ -1,0 +1,475 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  milestones: CollectionEntry<'fountains'>[];
+  /** First year on the slider. */
+  startYear?: number;
+}
+
+const { milestones, startYear = 2016 } = Astro.props;
+
+const currentYear = new Date().getFullYear();
+
+// One stop per year from startYear to now, plus a trailing "Future" position.
+const years = Array.from(
+  { length: currentYear - startYear + 1 },
+  (_, i) => startYear + i,
+);
+
+type Stop = { key: string; label: string; short: string };
+
+const stops: Stop[] = [
+  ...years.map((y) => ({ key: String(y), label: String(y), short: String(y).slice(2) })),
+  { key: 'future', label: 'Future', short: '∞' },
+];
+
+// Index milestones by stop key so each slider position can find its entry.
+const byKey = new Map(milestones.map((m) => [String(m.data.year), m]));
+
+// Open on the earliest stop that actually has content.
+const initialIndex = Math.max(
+  0,
+  stops.findIndex((s) => byKey.has(s.key)),
+);
+---
+
+<div class="tl" data-timeline>
+  <!-- Stage: every panel is rendered at build time; JS reveals one at a time.
+       With JS disabled the initial panel stays visible rather than nothing. -->
+  <div class="tl__stage">
+    {
+      stops.map((stop, i) => {
+        const entry = byKey.get(stop.key);
+        return (
+          <article
+            class="panel"
+            data-panel={String(i)}
+            hidden={i !== initialIndex}
+            aria-hidden={i !== initialIndex ? 'true' : 'false'}
+          >
+            <div class="panel__media">
+              {entry?.data.video ? (
+                <video
+                  poster={entry.data.image}
+                  muted
+                  loop
+                  playsinline
+                  preload="none"
+                  aria-hidden="true"
+                >
+                  <source src={entry.data.video} type="video/mp4" />
+                </video>
+              ) : entry?.data.image ? (
+                <img src={entry.data.image} alt={entry.data.title} loading="lazy" decoding="async" />
+              ) : (
+                <div class="panel__placeholder" aria-hidden="true">
+                  <span>{stop.label}</span>
+                </div>
+              )}
+            </div>
+
+            <div class="panel__body">
+              <p class="panel__year">{stop.label}</p>
+
+              {entry ? (
+                <>
+                  <h3 class="panel__title">{entry.data.title}</h3>
+                  <p class="panel__summary">{entry.data.summary}</p>
+                  {entry.data.achievements.length > 0 && (
+                    <ul class="panel__list">
+                      {entry.data.achievements.map((item) => (
+                        <li>{item}</li>
+                      ))}
+                    </ul>
+                  )}
+                </>
+              ) : (
+                <>
+                  <h3 class="panel__title panel__title--empty">Nothing logged yet</h3>
+                  <p class="panel__summary">
+                    Add <code>src/content/fountains/{stop.key}.md</code> with{' '}
+                    <code>year: {stop.key === 'future' ? '"future"' : stop.key}</code> and this
+                    panel fills itself in.
+                  </p>
+                </>
+              )}
+            </div>
+          </article>
+        );
+      })
+    }
+  </div>
+
+  <!-- Control: a real range input, so keyboard and touch work for free. -->
+  <div class="tl__control">
+    <div class="tl__readout">
+      <output class="tl__output" for="tl-range" data-output>{stops[initialIndex]?.label}</output>
+      <p class="tl__hint">Drag to travel through the build</p>
+    </div>
+
+    <div class="tl__track">
+      <div class="tl__fill" data-fill></div>
+
+      <input
+        class="tl__range"
+        id="tl-range"
+        type="range"
+        min="0"
+        max={stops.length - 1}
+        step="1"
+        value={initialIndex}
+        list="tl-stops"
+        aria-label="Timeline year"
+        data-range
+      />
+
+      <datalist id="tl-stops">
+        {stops.map((stop, i) => <option value={i} label={stop.label}></option>)}
+      </datalist>
+
+      <div class="tl__ticks" aria-hidden="true">
+        {
+          stops.map((stop, i) => (
+            <button
+              class:list={['tick', { 'tick--filled': byKey.has(stop.key), 'tick--future': stop.key === 'future' }]}
+              type="button"
+              tabindex="-1"
+              data-tick={String(i)}
+              title={stop.label}
+            >
+              <span class="tick__dot"></span>
+              <span class="tick__label">{stop.short}</span>
+            </button>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .tl {
+    display: grid;
+    gap: clamp(2rem, 4vw, 3rem);
+  }
+
+  /* ---- Stage ---- */
+
+  .tl__stage {
+    position: relative;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--bg);
+    overflow: hidden;
+  }
+
+  .panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    min-height: 380px;
+    animation: panel-in 0.45s var(--ease);
+  }
+
+  @media (max-width: 780px) {
+    .panel { grid-template-columns: 1fr; }
+  }
+
+  @keyframes panel-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  .panel__media {
+    position: relative;
+    background: var(--bg-alt);
+    min-height: 240px;
+  }
+
+  .panel__media img,
+  .panel__media video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .panel__placeholder {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    background:
+      repeating-linear-gradient(45deg, var(--bg-alt) 0 14px, #ededf0 14px 28px);
+  }
+
+  .panel__placeholder span {
+    font-size: var(--step-3);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #c9c9d0;
+  }
+
+  .panel__body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: clamp(1.75rem, 4vw, 3rem);
+  }
+
+  .panel__year {
+    margin: 0 0 0.6em;
+    font-size: var(--step--1);
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .panel__title {
+    margin-bottom: 0.4em;
+    font-size: var(--step-2);
+    text-wrap: balance;
+  }
+
+  .panel__title--empty { color: var(--text-muted); }
+
+  .panel__summary {
+    color: var(--text-muted);
+    text-wrap: pretty;
+  }
+
+  .panel__summary code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    color: var(--text);
+  }
+
+  .panel__list {
+    margin: 1.2em 0 0;
+    padding: 1.2em 0 0;
+    border-top: 1px solid var(--line-soft);
+    list-style: none;
+    display: grid;
+    gap: 0.55rem;
+  }
+
+  .panel__list li {
+    position: relative;
+    padding-left: 1.3em;
+  }
+
+  .panel__list li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.62em;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text);
+  }
+
+  /* ---- Control ---- */
+
+  .tl__readout {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .tl__output {
+    font-size: var(--step-3);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+
+  .tl__hint {
+    margin: 0;
+    font-size: var(--step--1);
+    color: var(--text-muted);
+  }
+
+  .tl__track {
+    position: relative;
+    padding-block: 0.5rem 0;
+  }
+
+  /* Progress fill sits behind the native input's transparent track. */
+  .tl__fill {
+    position: absolute;
+    left: 0;
+    top: calc(0.5rem + 13px);
+    height: 2px;
+    background: var(--text);
+    pointer-events: none;
+    transition: width 0.25s var(--ease);
+    z-index: 1;
+  }
+
+  .tl__range {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    margin: 0;
+    background: transparent;
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+  }
+
+  .tl__range::-webkit-slider-runnable-track {
+    height: 2px;
+    background: var(--line);
+  }
+
+  .tl__range::-moz-range-track {
+    height: 2px;
+    background: var(--line);
+  }
+
+  .tl__range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    margin-top: -10px;
+    border-radius: 50%;
+    background: var(--text);
+    border: 3px solid var(--bg);
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
+    transition: scale 0.18s var(--ease);
+  }
+
+  .tl__range::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--text);
+    border: 3px solid var(--bg);
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
+  }
+
+  .tl__range:active::-webkit-slider-thumb { scale: 1.12; }
+
+  .tl__ticks {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.4rem;
+  }
+
+  .tick {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+    padding: 0;
+    background: none;
+    border: 0;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .tick__dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--line);
+    transition: background-color 0.2s var(--ease), scale 0.2s var(--ease);
+  }
+
+  /* Years that actually have a milestone read as solid markers. */
+  .tick--filled .tick__dot {
+    background: var(--text);
+    scale: 1.5;
+  }
+
+  .tick__label {
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tick--future .tick__label { font-size: 0.8rem; }
+
+  .tick.is-active .tick__label {
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  @media (max-width: 620px) {
+    .tick__label { display: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .panel { animation: none; }
+    .tl__fill { transition: none; }
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-timeline]').forEach((root) => {
+    const range = root.querySelector<HTMLInputElement>('[data-range]');
+    const output = root.querySelector<HTMLElement>('[data-output]');
+    const fill = root.querySelector<HTMLElement>('[data-fill]');
+    const panels = root.querySelectorAll<HTMLElement>('[data-panel]');
+    const ticks = root.querySelectorAll<HTMLButtonElement>('[data-tick]');
+
+    if (!range) return;
+
+    const labels = Array.from(ticks).map(
+      (tick) => tick.getAttribute('title') ?? '',
+    );
+
+    const show = (index: number) => {
+      panels.forEach((panel) => {
+        const match = Number(panel.dataset.panel) === index;
+        panel.hidden = !match;
+        panel.setAttribute('aria-hidden', String(!match));
+      });
+
+      ticks.forEach((tick, i) => {
+        tick.classList.toggle('is-active', i === index);
+      });
+
+      const label = labels[index] ?? String(index);
+      if (output) output.textContent = label;
+      range.setAttribute('aria-valuetext', label);
+
+      if (fill) {
+        const max = Number(range.max) || 1;
+        fill.style.width = `${(index / max) * 100}%`;
+      }
+
+      // Only the visible clip should be running.
+      root.querySelectorAll<HTMLVideoElement>('video').forEach((video) => {
+        const panel = video.closest<HTMLElement>('[data-panel]');
+        if (!panel) return;
+        if (panel.hidden) {
+          video.pause();
+        } else {
+          video.play().catch(() => {});
+        }
+      });
+    };
+
+    range.addEventListener('input', () => show(Number(range.value)));
+
+    ticks.forEach((tick, i) => {
+      tick.addEventListener('click', () => {
+        range.value = String(i);
+        show(i);
+      });
+    });
+
+    show(Number(range.value));
+  });
+</script>

@@ -1,0 +1,90 @@
+---
+import { SITE } from '../site';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="footer">
+  <div class="wrap footer__inner">
+    <div>
+      <p class="footer__brand">WERDNAAA</p>
+      <p class="footer__tag">{SITE.tagline}</p>
+    </div>
+
+    <nav aria-label="Footer">
+      <ul class="footer__links">
+        {SITE.socials.map((s) => (
+          <li>
+            <a href={s.href} rel={s.href.startsWith('http') ? 'me noopener' : undefined}>
+              {s.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  </div>
+
+  <div class="wrap footer__base">
+    <p>&copy; {year} {SITE.name}</p>
+    <p>Built with Astro &middot; Hosted on GitHub Pages</p>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    padding-top: clamp(3rem, 7vw, 5rem);
+    padding-bottom: 2rem;
+    background: var(--bg-alt);
+    border-top: 1px solid var(--line-soft);
+    font-size: var(--step--1);
+  }
+
+  .footer__inner {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2.5rem;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 2.5rem;
+  }
+
+  .footer__brand {
+    margin: 0 0 0.35em;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+  }
+
+  .footer__tag {
+    margin: 0;
+    max-width: 34ch;
+    color: var(--text-muted);
+  }
+
+  .footer__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .footer__links a {
+    color: var(--text-muted);
+    transition: color 0.2s var(--ease);
+  }
+
+  .footer__links a:hover { color: var(--text); }
+
+  .footer__base {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+    color: var(--text-muted);
+  }
+
+  .footer__base p { margin: 0; }
+</style>

@@ -1,0 +1,144 @@
+---
+import { getCollection } from 'astro:content';
+import { getImage } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import VideoHero from '../components/VideoHero.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import { SITE } from '../site';
+import jewelVortex from '../assets/jewel-singapore-vortex.jpg';
+
+/**
+ * Source photos live in src/assets/ (not public/) so Astro resizes and
+ * re-encodes them at build time. The 4000px camera original never ships.
+ */
+const introBg = await getImage({
+  src: jewelVortex,
+  width: 1920,
+  format: 'webp',
+  quality: 60,
+});
+
+const featured = (await getCollection('projects', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.year - a.data.year || b.data.weight - a.data.weight)
+  .slice(0, 3);
+---
+
+<Base overlayNav>
+  <VideoHero
+    title="Hi, I'm Andrew!"
+    kicker="You may know me as Werdna FPV"
+    subtitle={SITE.tagline}
+    subtitleNoWrap
+    height="full"
+  >
+    <a class="btn btn--light" href="/about/">Portfolio</a>
+    <a class="btn btn--light" href="/projects/">Engineering Projects</a>
+    <a class="btn btn--light" href="/fpv/">FPV Racing</a>
+  </VideoHero>
+
+  <!-- Drop a montage loop into /public/video and point `src` at it:
+       <VideoHero src="/video/montage.mp4" poster="/posters/montage.jpg" ... /> -->
+
+  <section class="section section--photo" style={`--photo: url('${introBg.src}')`}>
+    <div class="wrap">
+      <div class="intro reveal">
+        <p class="eyebrow">Why does this page exist?</p>
+        <h2>It's a lot cooler than a LinkedIn Profile!</h2>
+        <p class="lede">
+          I am an Aerospace Engineering nerd who loves anything that flies!
+          Currently working at Changi Airport Group.
+          In my free time I am a professional FPV racing pilot and musical fountain designer.
+        </p>
+        <a class="link-arrow" href="/about/">About Me</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--alt">
+    <div class="wrap">
+      <header class="block-head reveal">
+        <div>
+          <p class="eyebrow">Selected work</p>
+          <h2>Featured projects</h2>
+        </div>
+        <a class="link-arrow" href="/projects/">All projects</a>
+      </header>
+
+      <div class="grid grid--3">
+        {featured.map((project) => <ProjectCard project={project} />)}
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--deep">
+    <div class="wrap cta reveal">
+      <p class="eyebrow">Get in touch</p>
+      <h2>Was supposed to put my LinkedIn here but...</h2>
+      <p class="lede cta__lede">
+        Instead, here's a shameless plug for my YouTube Channel. Please consider subscribing if you can!
+      </p>
+      <a class="btn btn--light" href={SITE.contact.href} rel="noopener" target="_blank">
+        {SITE.contact.label}
+      </a>
+    </div>
+  </section>
+</Base>
+
+<style>
+  /* Photo backdrop. The flat black gradient layer sits above the image in
+     the same background shorthand, so compositing black at this alpha scales
+     every channel down — 0.62 renders the photo 62% darker. The text on top
+     is unaffected (a filter would have dimmed that too). */
+  .section--photo {
+    background-image:
+      linear-gradient(rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0.62)),
+      var(--photo);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    color: var(--text-inverse);
+  }
+
+  .section--photo .eyebrow { color: rgba(245, 245, 247, 0.72); }
+  .section--photo .lede { color: rgba(245, 245, 247, 0.92); }
+
+  .section--photo .link-arrow {
+    color: #fff;
+    font-weight: 700;
+  }
+
+  .intro {
+    max-width: 68ch;
+  }
+
+  .intro h2 {
+    margin-bottom: 0.55em;
+    text-wrap: balance;
+  }
+
+  .intro .lede {
+    margin-bottom: 1.4em;
+  }
+
+  .block-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.25rem;
+    margin-bottom: clamp(2rem, 5vw, 3.5rem);
+  }
+
+  .block-head h2 { margin-bottom: 0; }
+
+  .cta {
+    max-width: 62ch;
+  }
+
+  .cta h2 { text-wrap: balance; }
+
+  .cta__lede {
+    color: rgba(245, 245, 247, 0.72);
+    margin-bottom: 1.8em;
+  }
+</style>

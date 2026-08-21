@@ -1,0 +1,167 @@
+---
+import { getCollection, render } from 'astro:content';
+import type { GetStaticPaths } from 'astro';
+import Base from '../../layouts/Base.astro';
+
+export const getStaticPaths = (async () => {
+  const projects = await getCollection('projects', ({ data }) => !data.draft);
+  return projects.map((project) => ({
+    params: { slug: project.id },
+    props: { project },
+  }));
+}) satisfies GetStaticPaths;
+
+const { project } = Astro.props;
+const { Content } = await render(project);
+const { title, summary, year, role, tags, cover, video, embed, repo, link } = project.data;
+---
+
+<Base title={title} description={summary}>
+  <article>
+    <header class="head">
+      <div class="wrap wrap--narrow">
+        <a class="back" href="/projects/">&larr; All projects</a>
+        <h1 class="head__title">{title}</h1>
+        <p class="lede">{summary}</p>
+
+        <dl class="facts">
+          <div><dt>Year</dt><dd>{year}</dd></div>
+          {role && <div><dt>Role</dt><dd>{role}</dd></div>}
+          {
+            tags.length > 0 && (
+              <div>
+                <dt>Stack</dt>
+                <dd>{tags.join(', ')}</dd>
+              </div>
+            )
+          }
+        </dl>
+
+        {
+          (repo || link) && (
+            <p class="head__links">
+              {link && <a class="btn" href={link} rel="noopener" target="_blank">Live</a>}
+              {repo && <a class="btn" href={repo} rel="noopener" target="_blank">Source</a>}
+            </p>
+          )
+        }
+      </div>
+    </header>
+
+    {
+      embed ? (
+        <div class="wrap media">
+          <div class="media__frame">
+            <iframe
+              src={embed}
+              title={`${title} — video`}
+              loading="lazy"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen
+            />
+          </div>
+        </div>
+      ) : video ? (
+        <div class="wrap media">
+          <video class="media__asset" poster={cover} controls playsinline preload="metadata">
+            <source src={video} type="video/mp4" />
+          </video>
+        </div>
+      ) : cover ? (
+        <div class="wrap media">
+          <img class="media__asset" src={cover} alt={title} loading="lazy" decoding="async" />
+        </div>
+      ) : null
+    }
+
+    <div class="wrap wrap--narrow body prose">
+      <Content />
+    </div>
+  </article>
+</Base>
+
+<style>
+  .head {
+    padding-block: clamp(2.5rem, 6vw, 4.5rem) clamp(2rem, 4vw, 3rem);
+  }
+
+  .back {
+    display: inline-block;
+    margin-bottom: 2em;
+    font-size: var(--step--1);
+    color: var(--text-muted);
+    transition: color 0.2s var(--ease);
+  }
+
+  .back:hover { color: var(--text); }
+
+  .head__title {
+    margin-bottom: 0.35em;
+    text-wrap: balance;
+  }
+
+  .facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2.5rem;
+    margin: 2.2rem 0 0;
+    padding-top: 1.6rem;
+    border-top: 1px solid var(--line-soft);
+  }
+
+  .facts dt {
+    margin-bottom: 0.3em;
+    font-size: var(--step--1);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .facts dd { margin: 0; }
+
+  .head__links {
+    display: flex;
+    gap: 0.75rem;
+    margin: 2rem 0 0;
+  }
+
+  .media { margin-bottom: clamp(2.5rem, 6vw, 4rem); }
+
+  .media__frame {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    background: var(--bg-alt);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .media__frame iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+
+  .media__asset {
+    width: 100%;
+    border-radius: var(--radius);
+    background: var(--bg-alt);
+  }
+
+  .body { padding-bottom: var(--section-y); }
+
+  .body :global(h2) {
+    margin-top: 1.8em;
+    font-size: var(--step-1);
+  }
+
+  .body :global(h2:first-child) { margin-top: 0; }
+
+  .body :global(img),
+  .body :global(video) {
+    width: 100%;
+    margin-block: 2em;
+    border-radius: var(--radius);
+  }
+</style>

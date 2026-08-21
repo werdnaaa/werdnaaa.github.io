@@ -1,0 +1,250 @@
+---
+import Base from '../layouts/Base.astro';
+import VideoHero from '../components/VideoHero.astro';
+import { SITE } from '../site';
+
+// Swap these for your own history. Kept as data so the timeline stays tidy.
+const timeline = [
+  {
+    period: '2024 — now',
+    title: 'Your current role',
+    org: 'Company or project',
+    detail: 'One or two lines on what you own and what you have shipped.',
+  },
+  {
+    period: '2022 — 2024',
+    title: 'Previous role',
+    org: 'Company or project',
+    detail: 'Another entry. Lead with outcomes, not responsibilities.',
+  },
+  {
+    period: '2018 — 2022',
+    title: 'Degree or formative project',
+    org: 'Institution',
+    detail: 'What you studied and the work that actually mattered.',
+  },
+];
+
+const skills = [
+  { group: 'Engineering', items: ['Embedded C/C++', 'Python', 'PCB design', 'CAD & 3D printing'] },
+  { group: 'Software', items: ['TypeScript', 'Astro', 'Git', 'Linux'] },
+  { group: 'Flight', items: ['FPV racing', 'Betaflight tuning', 'Build & repair', 'Video editing'] },
+];
+---
+
+<Base title="About" description={`About ${SITE.name} — background, skills and where to find me.`} overlayNav>
+  <VideoHero eyebrow="About" title="Who I am" height="tall" align="left" />
+
+  <section class="section">
+    <div class="wrap bio">
+      <div class="bio__text reveal">
+        <p class="eyebrow">Bio</p>
+        <p class="lede">
+          Open with the one sentence you would want someone to remember. What
+          you build, and the thread that connects it all.
+        </p>
+        <p>
+          Then two or three paragraphs of detail — how you got here, the kind of
+          problems you like, and what you are looking for next. Keep it human;
+          this is the page people read before they email you.
+        </p>
+        <p>
+          Mention the FPV flying here too. It is the thing that makes the rest of
+          the site memorable, and it says something real about how you learn.
+        </p>
+      </div>
+
+      <aside class="bio__side reveal">
+        <div class="panel">
+          <h2 class="panel__title">Contact</h2>
+          <dl class="detail">
+            <dt>Best way to reach me</dt>
+            <dd>
+              <a class="link-arrow" href={SITE.contact.href} rel="noopener" target="_blank">
+                {SITE.contact.label}
+              </a>
+            </dd>
+            <dt>Location</dt>
+            <dd>{SITE.location}</dd>
+          </dl>
+
+          <h2 class="panel__title panel__title--spaced">Elsewhere</h2>
+          <ul class="social">
+            {SITE.socials.map((s) => (
+              <li>
+                <a class="link-arrow" href={s.href} rel="me noopener" target="_blank">{s.label}</a>
+              </li>
+            ))}
+          </ul>
+
+          <p class="panel__note">
+            Add a CV link here once you have one — drop the PDF in
+            <code>/public</code> and link to <code>/cv.pdf</code>.
+          </p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="section section--alt">
+    <div class="wrap">
+      <p class="eyebrow reveal">Background</p>
+      <h2 class="reveal">Where I have been</h2>
+
+      <ol class="timeline">
+        {timeline.map((item) => (
+          <li class="timeline__item reveal">
+            <p class="timeline__period">{item.period}</p>
+            <div>
+              <h3 class="timeline__title">{item.title}</h3>
+              <p class="timeline__org">{item.org}</p>
+              <p class="muted">{item.detail}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <p class="eyebrow reveal">Toolkit</p>
+      <h2 class="reveal">What I work with</h2>
+
+      <div class="grid grid--3 skills">
+        {skills.map((skill) => (
+          <div class="reveal">
+            <h3 class="skills__group">{skill.group}</h3>
+            <ul class="skills__list">
+              {skill.items.map((item) => <li>{item}</li>)}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .bio {
+    display: grid;
+    gap: clamp(2rem, 5vw, 4rem);
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  @media (max-width: 860px) {
+    .bio { grid-template-columns: 1fr; }
+  }
+
+  .bio__text { max-width: var(--measure); }
+  .bio__text .lede { margin-bottom: 1.2em; }
+
+  .panel {
+    padding: clamp(1.5rem, 3vw, 2rem);
+    background: var(--bg-alt);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    position: sticky;
+    top: calc(var(--nav-h) + 1.5rem);
+  }
+
+  @media (max-width: 860px) {
+    .panel { position: static; }
+  }
+
+  .panel__title {
+    margin-bottom: 0.8em;
+    font-size: var(--step--1);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .panel__title--spaced { margin-top: 2em; }
+
+  .detail { margin: 0; }
+  .detail dt {
+    font-size: var(--step--1);
+    color: var(--text-muted);
+  }
+  .detail dd {
+    margin: 0.15em 0 1em;
+    word-break: break-word;
+  }
+
+  .social {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.6rem;
+  }
+
+  .panel__note {
+    margin-top: 2em;
+    padding-top: 1.2em;
+    border-top: 1px solid var(--line);
+    font-size: var(--step--1);
+    color: var(--text-muted);
+  }
+
+  .panel__note code {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+  }
+
+  .timeline {
+    margin: clamp(2rem, 4vw, 3rem) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .timeline__item {
+    display: grid;
+    grid-template-columns: minmax(0, 200px) minmax(0, 1fr);
+    gap: clamp(1rem, 4vw, 3rem);
+    padding: clamp(1.5rem, 3vw, 2.2rem) 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .timeline__item:last-child { border-bottom: 1px solid var(--line); }
+
+  @media (max-width: 640px) {
+    .timeline__item { grid-template-columns: 1fr; gap: 0.5rem; }
+  }
+
+  .timeline__period {
+    margin: 0;
+    font-size: var(--step--1);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .timeline__title { margin-bottom: 0.15em; }
+
+  .timeline__org {
+    margin-bottom: 0.6em;
+    color: var(--text-muted);
+  }
+
+  .skills { margin-top: clamp(2rem, 4vw, 3rem); }
+
+  .skills__group {
+    padding-bottom: 0.7em;
+    margin-bottom: 0.9em;
+    border-bottom: 1px solid var(--line);
+    font-size: var(--step-0);
+    letter-spacing: 0.04em;
+  }
+
+  .skills__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.5rem;
+    color: var(--text-muted);
+  }
+</style>
