@@ -1,11 +1,22 @@
 ---
 import { getCollection } from 'astro:content';
+import { getImage } from 'astro:assets';
 import Base from '../../layouts/Base.astro';
 import VideoHero from '../../components/VideoHero.astro';
 import ProjectCard from '../../components/ProjectCard.astro';
+import { sortProjects } from '../../lib/projects';
+import dronePhoto from '../../assets/werdnaaa-autonomous-drone.jpg';
+
+// min() so a source narrower than 1920 is never upscaled.
+const heroBg = await getImage({
+  src: dronePhoto,
+  width: Math.min(1920, dronePhoto.width),
+  format: 'webp',
+  quality: 65,
+});
 
 const projects = (await getCollection('projects', ({ data }) => !data.draft)).sort(
-  (a, b) => b.data.year - a.data.year || b.data.weight - a.data.weight,
+  sortProjects,
 );
 
 // Build the filter bar from whatever tags actually exist in the content.
@@ -13,14 +24,16 @@ const tags = [...new Set(projects.flatMap((p) => p.data.tags))].sort();
 ---
 
 <Base
-  title="Projects"
-  description="Selected engineering and design projects — hardware, firmware and software."
+  title="My Projects"
+  description="Everything from a Custom Hovercraft to an 80 Watt Handheld Fan to a 290km/h Sub-250g Rocket Drone"
   overlayNav
 >
   <VideoHero
-    eyebrow="Work"
-    title="Projects"
-    subtitle="Hardware, firmware and software — things I designed, built and shipped."
+    poster={heroBg.src}
+    dim={0.5}
+    eyebrow="What I've Been Cooking"
+    title="My Projects"
+    subtitle="Everything from a Custom Hovercraft to an 80 Watt Handheld Fan to a 290km/h Sub-250g Rocket Drone"
     height="tall"
     align="left"
   />

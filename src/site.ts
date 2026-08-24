@@ -13,11 +13,18 @@ export const SITE = {
   tagline: 'Aerospace Engineer, Musical Fountain Builder, FPV Drone Pilot',
   description:
     'Portfolio and project archive — engineering work, things I have built, musical fountains, and FPV drone racing.',
-  location: 'Singapore',
+  location: 'Singapore / Ann Arbor',
   /** Where the "get in touch" buttons point. Swap for whichever you prefer. */
   contact: {
-    label: 'Werdna FPV YouTube Channel',
+    label: 'Click Me',
     href: 'https://youtube.com/c/werdnafpv',
+  },
+  /**
+     * Nav music player. Drop an audio file into public/audio/ and the player
+     * appears; leave `title` empty to use a prettified filename.
+     */
+  music: {
+    title: 'BGM.mp3',
   },
   socials: [
     { label: 'GitHub', href: 'https://github.com/werdnaaa' },

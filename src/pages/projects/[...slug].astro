@@ -2,6 +2,9 @@
 import { getCollection, render } from 'astro:content';
 import type { GetStaticPaths } from 'astro';
 import Base from '../../layouts/Base.astro';
+import { Image } from 'astro:assets';
+import { formatYears, albumFor, logoFor } from '../../lib/projects';
+import ProjectGallery from '../../components/ProjectGallery.astro';
 
 export const getStaticPaths = (async () => {
   const projects = await getCollection('projects', ({ data }) => !data.draft);
@@ -13,7 +16,13 @@ export const getStaticPaths = (async () => {
 
 const { project } = Astro.props;
 const { Content } = await render(project);
-const { title, summary, year, role, tags, cover, video, embed, repo, link } = project.data;
+const { title, summary, goal, tags, captions, cover, video, embed, repo, link } = project.data;
+const years = formatYears(project.data);
+const album = albumFor(project.id, {
+  includeLogo: project.data.logoInAlbum,
+  logoIndex: project.data.logoAlbumIndex,
+});
+const logo = logoFor(project.id);
 ---
 
 <Base title={title} description={summary}>
@@ -21,16 +30,31 @@ const { title, summary, year, role, tags, cover, video, embed, repo, link } = pr
     <header class="head">
       <div class="wrap wrap--narrow">
         <a class="back" href="/projects/">&larr; All projects</a>
-        <h1 class="head__title">{title}</h1>
+        <div class="head__top">
+          <h1 class="head__title">{title}</h1>
+          {
+            logo && (
+              <Image
+                class="head__logo"
+                src={logo}
+                alt={`${title} logo`}
+                widths={[280, 560]}
+                sizes="260px"
+                loading="eager"
+                decoding="async"
+              />
+            )
+          }
+        </div>
         <p class="lede">{summary}</p>
 
         <dl class="facts">
-          <div><dt>Year</dt><dd>{year}</dd></div>
-          {role && <div><dt>Role</dt><dd>{role}</dd></div>}
+          <div><dt>Years</dt><dd>{years}</dd></div>
+          {goal && <div><dt>Goal</dt><dd>{goal}</dd></div>}
           {
             tags.length > 0 && (
               <div>
-                <dt>Stack</dt>
+                <dt>Tags</dt>
                 <dd>{tags.join(', ')}</dd>
               </div>
             )
@@ -48,8 +72,14 @@ const { title, summary, year, role, tags, cover, video, embed, repo, link } = pr
       </div>
     </header>
 
+    {album.length > 0 && (
+      <div class="wrap wrap--narrow">
+        <ProjectGallery images={album} title={title} captions={captions} />
+      </div>
+    )}
+
     {
-      embed ? (
+      album.length === 0 && embed ? (
         <div class="wrap media">
           <div class="media__frame">
             <iframe
@@ -61,13 +91,13 @@ const { title, summary, year, role, tags, cover, video, embed, repo, link } = pr
             />
           </div>
         </div>
-      ) : video ? (
+      ) : album.length === 0 && video ? (
         <div class="wrap media">
           <video class="media__asset" poster={cover} controls playsinline preload="metadata">
             <source src={video} type="video/mp4" />
           </video>
         </div>
-      ) : cover ? (
+      ) : album.length === 0 && cover ? (
         <div class="wrap media">
           <img class="media__asset" src={cover} alt={title} loading="lazy" decoding="async" />
         </div>
@@ -79,6 +109,54 @@ const { title, summary, year, role, tags, cover, video, embed, repo, link } = pr
     </div>
   </article>
 </Base>
+
+<script>
+  /**
+     Markdown can carry <div data-youtube="VIDEO_ID"></div>. This upgrades each
+     one into a poster that swaps itself for the real player on click.
+   */
+  document.querySelectorAll<HTMLElement>('[data-youtube]').forEach((host) => {
+    const id = host.dataset.youtube;
+    if (!id) return;
+
+    host.classList.add('video');
+    host.textContent = '';
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'video__btn';
+    button.setAttribute('aria-label', `Play video: ${host.dataset.title ?? 'YouTube video'}`);
+
+    const thumb = document.createElement('img');
+    thumb.className = 'video__thumb';
+    thumb.loading = 'lazy';
+    thumb.alt = '';
+    thumb.src = `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
+    // maxres does not exist for every upload; hq always does.
+    thumb.addEventListener('error', () => {
+      thumb.src = `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
+    }, { once: true });
+
+    const play = document.createElement('span');
+    play.className = 'video__play';
+    play.innerHTML =
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+
+    button.append(thumb, play);
+    host.append(button);
+
+    button.addEventListener('click', () => {
+      const frame = document.createElement('iframe');
+      // nocookie + autoplay, since the click is the user's intent to play.
+      frame.src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0`;
+      frame.title = host.dataset.title ?? 'YouTube video player';
+      frame.allow =
+        'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+      frame.allowFullscreen = true;
+      host.replaceChildren(frame);
+    });
+  });
+</script>
 
 <style>
   .head {
@@ -95,9 +173,39 @@ const { title, summary, year, role, tags, cover, video, embed, repo, link } = pr
 
   .back:hover { color: var(--text); }
 
-  .head__title {
+  .head__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: clamp(1rem, 4vw, 2.5rem);
     margin-bottom: 0.35em;
+  }
+
+  .head__title {
+    margin-bottom: 0;
     text-wrap: balance;
+  }
+
+  /* Mark sits to the right of the title, fitted inside a shared box rather
+     than pinned to one dimension: a wide wordmark hits the width limit and
+     stays short, while a near-square render grows until it hits the height
+     limit. Both fill the space beside the heading. */
+  .head__logo {
+    flex: none;
+    width: auto;
+    height: auto;
+    max-width: clamp(150px, 34%, 300px);
+    max-height: clamp(64px, 15vw, 155px);
+    object-fit: contain;
+  }
+
+  /* Not enough room for a side-by-side lockup below this width. */
+  @media (max-width: 620px) {
+    .head__top {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+    }
   }
 
   .facts {
@@ -150,6 +258,159 @@ const { title, summary, year, role, tags, cover, video, embed, repo, link } = pr
   }
 
   .body { padding-bottom: var(--section-y); }
+
+  /* Justified body prose, with hyphenation so the browser breaks words
+     instead of stretching word spacing into white rivers. */
+  .body :global(p),
+  .body :global(li) {
+    text-align: justify;
+    hyphens: auto;
+  }
+
+  @supports (-webkit-hyphens: auto) {
+    .body :global(p),
+    .body :global(li) { -webkit-hyphens: auto; }
+  }
+
+  /* Too narrow to justify without large gaps between words. */
+  @media (max-width: 620px) {
+    .body :global(p),
+    .body :global(li) {
+      text-align: left;
+      hyphens: manual;
+    }
+
+    @supports (-webkit-hyphens: auto) {
+      .body :global(p),
+      .body :global(li) { -webkit-hyphens: manual; }
+    }
+  }
+
+  /* Click-to-play video. Nothing from YouTube loads until the poster is
+     clicked, which keeps their ~1 MB of player script off the initial load
+     and avoids setting third-party cookies for people who never watch. */
+  .body :global(.video) {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    margin-block: 1.8em;
+    background: var(--bg-deep);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .body :global(.video__btn) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    background: none;
+    border: 0;
+    cursor: pointer;
+  }
+
+  .body :global(.video__thumb) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: scale 0.4s var(--ease), opacity 0.3s var(--ease);
+  }
+
+  .body :global(.video__btn:hover .video__thumb) {
+    scale: 1.03;
+    opacity: 0.85;
+  }
+
+  .body :global(.video__play) {
+    position: absolute;
+    inset: 50% auto auto 50%;
+    translate: -50% -50%;
+    display: grid;
+    place-items: center;
+    width: 68px;
+    height: 48px;
+    background: rgba(0, 0, 0, 0.72);
+    border-radius: 12px;
+    transition: background-color 0.25s var(--ease), scale 0.25s var(--ease);
+  }
+
+  .body :global(.video__btn:hover .video__play) {
+    background: #ff0000;
+    scale: 1.06;
+  }
+
+  .body :global(.video__play svg) {
+    width: 22px;
+    height: 22px;
+    fill: #fff;
+  }
+
+  .body :global(.video iframe) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+
+  /* Without JS the markdown fallback link is all that remains. */
+  .body :global(.video > a) {
+    position: absolute;
+    inset: 50% auto auto 50%;
+    translate: -50% -50%;
+    color: #fff;
+    text-decoration: underline;
+  }
+
+  /* Two-column spec tables. Left column is the trait, right is the value. */
+  .body :global(table) {
+    width: 100%;
+    margin-block: 1.5em;
+    border-collapse: collapse;
+    font-size: var(--step-0);
+    text-align: left;
+  }
+
+  /* A table written with blank header cells is a plain key/value list, so
+     drop the empty row. Tables with real headers keep theirs. */
+  .body :global(thead:has(th:empty)) { display: none; }
+
+  .body :global(th),
+  .body :global(td) {
+    padding: 0.7em 1em;
+    border-bottom: 1px solid var(--line-soft);
+    text-align: left;
+    hyphens: manual;
+  }
+
+  .body :global(tbody tr:first-child th),
+  .body :global(tbody tr:first-child td) {
+    border-top: 1px solid var(--line);
+  }
+
+  .body :global(tbody tr:last-child th),
+  .body :global(tbody tr:last-child td) {
+    border-bottom: 1px solid var(--line);
+  }
+
+  /* Trait column: fixed, bold, never wraps mid-label. */
+  .body :global(td:first-child) {
+    width: 40%;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .body :global(td:last-child) {
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (max-width: 520px) {
+    .body :global(td:first-child) {
+      width: 45%;
+      white-space: normal;
+    }
+  }
 
   .body :global(h2) {
     margin-top: 1.8em;

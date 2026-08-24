@@ -1,0 +1,131 @@
+---
+import { getCollection, render } from 'astro:content';
+import type { GetStaticPaths } from 'astro';
+import Base from '../../layouts/Base.astro';
+
+export const getStaticPaths = (async () => {
+  const posts = await getCollection('gospel', ({ data }) => !data.draft);
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { post },
+  }));
+}) satisfies GetStaticPaths;
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+const { title, summary, date, tags, scripture } = post.data;
+
+const fmt = new Intl.DateTimeFormat('en-GB', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+});
+---
+
+<Base title={title} description={summary}>
+  <article>
+    <header class="head">
+      <div class="wrap wrap--narrow">
+        <a class="back" href="/gospel/">&larr; All posts</a>
+
+        <p class="head__date">
+          <time datetime={date.toISOString()}>{fmt.format(date)}</time>
+        </p>
+
+        <h1 class="head__title">{title}</h1>
+        <p class="lede">{summary}</p>
+
+        {scripture && <p class="head__scripture">{scripture}</p>}
+
+        {
+          tags.length > 0 && (
+            <ul class="tags head__tags">
+              {tags.map((tag) => (
+                <li class="tag">{tag}</li>
+              ))}
+            </ul>
+          )
+        }
+      </div>
+    </header>
+
+    <div class="wrap wrap--narrow body prose">
+      <Content />
+    </div>
+  </article>
+</Base>
+
+<style>
+  .head {
+    padding-block: clamp(2.5rem, 6vw, 4.5rem) clamp(1.5rem, 3vw, 2.5rem);
+  }
+
+  .back {
+    display: inline-block;
+    margin-bottom: 2.5em;
+    font-size: var(--step--1);
+    color: var(--text-muted);
+    transition: color 0.2s var(--ease);
+  }
+
+  .back:hover { color: var(--text); }
+
+  .head__date {
+    margin-bottom: 0.8em;
+    font-size: var(--step--1);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .head__title {
+    margin-bottom: 0.35em;
+    text-wrap: balance;
+  }
+
+  .head__scripture {
+    margin-top: 1.5em;
+    padding-left: 1em;
+    border-left: 2px solid var(--line);
+    font-style: italic;
+    color: var(--text-muted);
+  }
+
+  .head__tags { margin-top: 2rem; }
+
+  .body {
+    padding-bottom: var(--section-y);
+    font-size: var(--step-1);
+    line-height: 1.7;
+  }
+
+  .body :global(h2) {
+    margin-top: 1.6em;
+    font-size: var(--step-2);
+  }
+
+  .body :global(h2:first-child) { margin-top: 0; }
+
+  .body :global(h3) {
+    margin-top: 1.4em;
+    font-size: var(--step-1);
+  }
+
+  .body :global(blockquote) {
+    margin: 1.8em 0;
+    padding-left: 1.2em;
+    border-left: 2px solid var(--line);
+    font-style: italic;
+    color: var(--text-muted);
+  }
+
+  .body :global(img) {
+    width: 100%;
+    margin-block: 2em;
+    border-radius: var(--radius);
+  }
+
+  .body :global(hr) {
+    margin-block: 2.5em;
+  }
+</style>

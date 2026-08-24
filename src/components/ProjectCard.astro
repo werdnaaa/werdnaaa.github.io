@@ -1,12 +1,17 @@
 ---
 import type { CollectionEntry } from 'astro:content';
+import { Image } from 'astro:assets';
+import { formatYears, coverFor } from '../lib/projects';
 
 interface Props {
   project: CollectionEntry<'projects'>;
 }
 
 const { project } = Astro.props;
-const { title, summary, year, role, tags, cover, video } = project.data;
+const { title, summary, goal, tags, cover, video } = project.data;
+const years = formatYears(project.data);
+// First album image wins; `cover` in front matter is the fallback.
+const poster = coverFor(project.id, { coverIsLogo: project.data.coverIsLogo });
 const href = `/projects/${project.id}/`;
 ---
 
@@ -17,7 +22,7 @@ const href = `/projects/${project.id}/`;
         video ? (
           <video
             class="card__asset"
-            poster={cover}
+            poster={poster?.src ?? cover}
             muted
             loop
             playsinline
@@ -28,6 +33,16 @@ const href = `/projects/${project.id}/`;
           >
             <source src={video} type="video/mp4" />
           </video>
+        ) : poster ? (
+          <Image
+            class="card__asset"
+            src={poster}
+            alt=""
+            widths={[320, 480, 720]}
+            sizes="(max-width: 720px) 100vw, 360px"
+            loading="lazy"
+            decoding="async"
+          />
         ) : cover ? (
           <img class="card__asset" src={cover} alt="" loading="lazy" decoding="async" />
         ) : (
@@ -38,8 +53,8 @@ const href = `/projects/${project.id}/`;
 
     <div class="card__body">
       <p class="card__meta">
-        <span>{year}</span>
-        {role && <><span aria-hidden="true">&middot;</span><span>{role}</span></>}
+        <span>{years}</span>
+        {goal && <><span aria-hidden="true">&middot;</span><span>{goal}</span></>}
       </p>
       <h3 class="card__title">{title}</h3>
       <p class="card__summary">{summary}</p>

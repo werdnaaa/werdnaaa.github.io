@@ -1,74 +1,196 @@
 ---
+import { getImage } from 'astro:assets';
 import Base from '../layouts/Base.astro';
 import VideoHero from '../components/VideoHero.astro';
 import { SITE } from '../site';
+import bioPhoto from '../assets/werdnaaa-bio.jpg';
+import jewelVortex from '../assets/jewel-singapore-vortex.jpg';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+
+// min() so a source narrower than 1920 is never upscaled.
+const heroBg = await getImage({
+  src: bioPhoto,
+  width: Math.min(1920, bioPhoto.width),
+  format: 'webp',
+  quality: 65,
+});
+
+// Same Jewel Changi shot as the home page, at the same 62% darkening.
+const workBg = await getImage({
+  src: jewelVortex,
+  width: 1920,
+  format: 'webp',
+  quality: 60,
+});
+
+/**
+ * Drop a logo into public/img/logos/ named after `slug` and it appears
+ * automatically — any of these extensions works, checked in order of
+ * preference. Until then each entry falls back to an initials monogram, so
+ * the layout is finished before the artwork is.
+ */
+const findLogo = (slug: string) => {
+  for (const ext of ['svg', 'png', 'webp', 'jpg', 'avif']) {
+    const rel = `/img/logos/${slug}.${ext}`;
+    if (existsSync(join(process.cwd(), 'public', rel))) return rel;
+  }
+  return null;
+};
+
+const initials = (name: string) =>
+  name
+    .replace(/[^A-Za-zÀ-ÿ ]/g, ' ')
+    .split(/\s+/)
+    .filter((w) => w.length > 2)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase())
+    .join('');
+
+// Placeholder dates and bullets — replace with your own.
+const education = [
+  {
+    slug: 'michigan',
+    school: 'University of Michigan Ann Arbor',
+    award: 'BSE Aerospace Engineering',
+    period: 'Aug 2022 - Apr 2026',
+    points: [
+      'Focus: Aerospace Structures, Fluid Mechanics',
+      'Design of Sub-250g Rocket FPV Drone',
+    ],
+  },
+  {
+    slug: 'tu-berlin',
+    school: 'Technische Universität Berlin',
+    award: 'Research Exchange Programme',
+    period: 'May 2024 - Jul 2024',
+    points: [
+      'Fluid Dynamics and Wind Tunnel Research',
+      'Proficiency in Star-CCM+ simulation',
+    ],
+  },
+  {
+    slug: 'raffles',
+    school: 'Raffles Institution',
+    award: 'GCE A-Level Integrated Programme',
+    period: 'Jan 2014 - Nov 2019',
+    points: [
+      'Physics, Chemistry, Math, Economics (AAAA)',
+      'Vice-Chairman of the Raffles Players',
+    ],
+  },
+  {
+    slug: 'catholic-high',
+    school: 'Catholic High School',
+    award: 'Primary School Leaving Examination',
+    period: 'Jan 2007 - Nov 2013',
+    points: [
+      'Member of School Debate Team',
+      'Member of School Public Speaking Team',
+    ],
+  },
+].map((item) => ({ ...item, logo: findLogo(item.slug), mono: initials(item.school) }));
 
 // Swap these for your own history. Kept as data so the timeline stays tidy.
 const timeline = [
   {
-    period: '2024 — now',
-    title: 'Your current role',
-    org: 'Company or project',
-    detail: 'One or two lines on what you own and what you have shipped.',
+    slug: 'changi',
+    period: 'Jun 2026 — Present',
+    title: 'Mechanical/Robotics Engineer',
+    org: 'Changi Airport Group',
+    detail: 'Passenger Boarding Bridge management and autonomous drone development',
   },
   {
-    period: '2022 — 2024',
-    title: 'Previous role',
-    org: 'Company or project',
-    detail: 'Another entry. Lead with outcomes, not responsibilities.',
+    slug: 'wet-design',
+    period: 'Jun 2025 — Aug 2025',
+    title: 'Product Engineer',
+    org: 'WET Design Los Angeles',
+    detail: 'Underwater mechanical and cable design, rapid iteration for the Saadiyat project',
   },
   {
-    period: '2018 — 2022',
-    title: 'Degree or formative project',
-    org: 'Institution',
-    detail: 'What you studied and the work that actually mattered.',
+    slug: 'saf-medical-corps',
+    period: 'Jun 2020 — Oct 2021',
+    title: 'Combat Medic',
+    org: 'Singapore Armed Forces',
+    detail: 'Phlebotomy specialist, large-scale vaccine management and deployment in the SAF ',
   },
-];
+].map((item) => ({ ...item, logo: findLogo(item.slug), mono: initials(item.org) }));
 
 const skills = [
-  { group: 'Engineering', items: ['Embedded C/C++', 'Python', 'PCB design', 'CAD & 3D printing'] },
-  { group: 'Software', items: ['TypeScript', 'Astro', 'Git', 'Linux'] },
-  { group: 'Flight', items: ['FPV racing', 'Betaflight tuning', 'Build & repair', 'Video editing'] },
+  { group: 'Engineering', items: ['CAD/FEA (Solidworks, CATIA)', 'PCB Design (KiCAD)', 'Fluid Simulation (Star-CCM+)', '3D Printing (Bambu Lab)'] },
+  { group: 'Software', items: ['Embedded C++/Python', 'ROS/ROS2 Framework', 'Betaflight/Ardupilot/PX4', 'DMX Framework (QLC+)'] },
+  { group: 'FPV Drones', items: ['Carbon Fiber Frame Design', 'Blackbox PID/Filter Tuning', 'Rapid Build and Repair', 'Video Editing (Hitfilm Pro)'] },
 ];
 ---
 
 <Base title="About" description={`About ${SITE.name} — background, skills and where to find me.`} overlayNav>
-  <VideoHero eyebrow="About" title="Who I am" height="tall" align="left" />
+  <VideoHero
+    poster={heroBg.src}
+    eyebrow="Introduction"
+    title="About Me"
+    height="tall"
+    align="left"
+  />
 
   <section class="section">
     <div class="wrap bio">
       <div class="bio__text reveal">
         <p class="eyebrow">Bio</p>
         <p class="lede">
-          Open with the one sentence you would want someone to remember. What
-          you build, and the thread that connects it all.
+          I am an Aerospace Engineering nerd who loves anything that flies. My
+          academic journey has taken me from Singapore to the United States,
+          where I studied at the University of Michigan Ann Arbor (UofM).
         </p>
+
         <p>
-          Then two or three paragraphs of detail — how you got here, the kind of
-          problems you like, and what you are looking for next. Keep it human;
-          this is the page people read before they email you.
+          At UofM, beyond various theoretical courses on the fundamentals of
+          Aerospace Engineering, I gained proficiency in various CAD softwares
+          (Solidworks, Fusion360), Finite Element Analysis (CATIA), and
+          Computational Fluid Dynamics (Star-CCM+). I also picked up valuable
+          mechanical engineering skills such as fabrication experience with 3D
+          printing, soldering, spot welding, laser cutting, CNC machining, as
+          well as hands-on experience working in large open-loop wind tunnels.
         </p>
+
         <p>
-          Mention the FPV flying here too. It is the thing that makes the rest of
-          the site memorable, and it says something real about how you learn.
+          My prior internship experience includes stints at the Los
+          Angeles-based water engineering firm WET Design (where I did CAD work
+          on mechanical underwater components and cables for large-scale
+          fountain displays) and at Germany's Technische Universität Berlin
+          (where I conducted simple fluid dynamics simulations and research to
+          improve the aerodynamic efficiency of a Mercedes A-Class hatchback).
         </p>
+
+        <p>
+          Today, I work at Changi Airport Group Singapore as a Senior Associate
+          Engineer in the Passenger Boarding Bridge (PBB) Team. I am also involved
+          in autonomous drone development to secure our airport's success as the
+          high-tech, low-manpower aerodrome of the future.
+        </p>
+
+        <p>
+          Outside the workplace, I am a passionate maker who loves to tinker
+          with mechatronics, robotics, and anything that moves or flies. My
+          engineering hobbies include professional FPV drone racing (top-ranked
+          Singapore pilot and 2026 Canadian Champion in the micro drone racing
+          category), 3D printing, fabricating complex musical fountain displays,
+          and nature photography. Beyond my homemade musical fountain show,
+          which is the crown jewel of my after-hours engineering efforts, I've
+          also completed numerous other small projects, including a powerful
+          handheld electric fan, a micro hovercraft vehicle, a 5.8GHz signal
+          jammer, custom drones ranging from 2" micros to 7" beasts, and many
+          more. I also run the YouTube channel Werdna FPV, which has accrued
+          over 800,000 views and 3,700+ subscribers to date.
+        </p>
+
       </div>
 
       <aside class="bio__side reveal">
         <div class="panel">
-          <h2 class="panel__title">Contact</h2>
-          <dl class="detail">
-            <dt>Best way to reach me</dt>
-            <dd>
-              <a class="link-arrow" href={SITE.contact.href} rel="noopener" target="_blank">
-                {SITE.contact.label}
-              </a>
-            </dd>
-            <dt>Location</dt>
-            <dd>{SITE.location}</dd>
-          </dl>
+          <h2 class="panel__title">Location</h2>
+          <p class="panel__value">{SITE.location}</p>
 
-          <h2 class="panel__title panel__title--spaced">Elsewhere</h2>
+          <h2 class="panel__title panel__title--spaced">Social Media</h2>
           <ul class="social">
             {SITE.socials.map((s) => (
               <li>
@@ -77,29 +199,63 @@ const skills = [
             ))}
           </ul>
 
-          <p class="panel__note">
-            Add a CV link here once you have one — drop the PDF in
-            <code>/public</code> and link to <code>/cv.pdf</code>.
-          </p>
+          <h2 class="panel__title panel__title--spaced">Education</h2>
+          <ol class="edu">
+            {education.map((item) => (
+              <li class="edu__item">
+                <div class="edu__head">
+                  <span class="edu__logo">
+                    {item.logo ? (
+                      <img src={item.logo} alt="" loading="lazy" decoding="async" />
+                    ) : (
+                      <span class="edu__mono" aria-hidden="true">{item.mono}</span>
+                    )}
+                  </span>
+
+                  <span class="edu__id">
+                    <span class="edu__school">{item.school}</span>
+                    <span class="edu__period">{item.period}</span>
+                  </span>
+                </div>
+
+                <p class="edu__award">{item.award}</p>
+
+                <ul class="edu__points">
+                  {item.points.map((point) => (
+                    <li>{point}</li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ol>
         </div>
       </aside>
     </div>
   </section>
 
-  <section class="section section--alt">
+  <section class="section section--photo" style={`--photo: url('${workBg.src}')`}>
     <div class="wrap">
-      <p class="eyebrow reveal">Background</p>
-      <h2 class="reveal">Where I have been</h2>
+      <p class="eyebrow reveal">Where I have been</p>
+      <h2 class="reveal">Work Experience</h2>
 
       <ol class="timeline">
         {timeline.map((item) => (
           <li class="timeline__item reveal">
             <p class="timeline__period">{item.period}</p>
-            <div>
+
+            <div class="timeline__body">
               <h3 class="timeline__title">{item.title}</h3>
               <p class="timeline__org">{item.org}</p>
               <p class="muted">{item.detail}</p>
             </div>
+
+            <span class="timeline__logo">
+              {item.logo ? (
+                <img src={item.logo} alt="" loading="lazy" decoding="async" />
+              ) : (
+                <span class="timeline__mono" aria-hidden="true">{item.mono}</span>
+              )}
+            </span>
           </li>
         ))}
       </ol>
@@ -108,8 +264,8 @@ const skills = [
 
   <section class="section">
     <div class="wrap">
-      <p class="eyebrow reveal">Toolkit</p>
-      <h2 class="reveal">What I work with</h2>
+      <p class="eyebrow reveal">My Toolkit</p>
+      <h2 class="reveal">Skills and Proficiencies</h2>
 
       <div class="grid grid--3 skills">
         {skills.map((skill) => (
@@ -138,19 +294,51 @@ const skills = [
   }
 
   .bio__text { max-width: var(--measure); }
-  .bio__text .lede { margin-bottom: 1.2em; }
+  .bio__text .lede { margin-bottom: 1.6em; }
 
+  /* Justified body copy. Hyphenation is not optional here — without it the
+     browser stretches word spacing to fill each line and carves white
+     "rivers" down the column. Needs lang="en" on <html>, which Base sets. */
+  .bio__text p:not(.eyebrow) {
+    margin-bottom: 1.5em;
+    text-align: justify;
+    hyphens: auto;
+  }
+
+  /* Safari below 17 only understands the prefixed property, and a plain
+     duplicate declaration gets pruned by the CSS minifier. */
+  @supports (-webkit-hyphens: auto) {
+    .bio__text p:not(.eyebrow) { -webkit-hyphens: auto; }
+  }
+
+  /* Narrow columns cannot justify without huge gaps between words. */
+  @media (max-width: 620px) {
+    .bio__text p:not(.eyebrow) {
+      text-align: left;
+      hyphens: manual;
+    }
+
+    @supports (-webkit-hyphens: auto) {
+      .bio__text p:not(.eyebrow) { -webkit-hyphens: manual; }
+    }
+  }
+
+  .bio__list {
+    margin: 0 0 1.5em;
+    padding-left: 1.4em;
+    display: grid;
+    gap: 0.6rem;
+  }
+
+  .bio__list li { padding-left: 0.3em; }
+
+  /* Not sticky: with the education list the panel is taller than the
+     viewport, and a sticky element that overflows strands its own footer. */
   .panel {
     padding: clamp(1.5rem, 3vw, 2rem);
     background: var(--bg-alt);
     border: 1px solid var(--line-soft);
     border-radius: var(--radius);
-    position: sticky;
-    top: calc(var(--nav-h) + 1.5rem);
-  }
-
-  @media (max-width: 860px) {
-    .panel { position: static; }
   }
 
   .panel__title {
@@ -163,13 +351,8 @@ const skills = [
 
   .panel__title--spaced { margin-top: 2em; }
 
-  .detail { margin: 0; }
-  .detail dt {
-    font-size: var(--step--1);
-    color: var(--text-muted);
-  }
-  .detail dd {
-    margin: 0.15em 0 1em;
+  .panel__value {
+    margin: 0;
     word-break: break-word;
   }
 
@@ -181,17 +364,147 @@ const skills = [
     gap: 0.6rem;
   }
 
-  .panel__note {
-    margin-top: 2em;
-    padding-top: 1.2em;
-    border-top: 1px solid var(--line);
-    font-size: var(--step--1);
+  /* ---- Work experience on a photo backdrop ---- */
+
+  .section--photo {
+    background-image:
+      linear-gradient(rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0.62)),
+      var(--photo);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    color: var(--text-inverse);
+  }
+
+  .section--photo .eyebrow { color: rgba(245, 245, 247, 0.72); }
+  .section--photo .muted { color: rgba(245, 245, 247, 0.78); }
+
+  /* Hairlines tuned for the dark ground — var(--line) all but vanishes. */
+  .section--photo .timeline__item {
+    border-top-color: rgba(255, 255, 255, 0.18);
+  }
+
+  .section--photo .timeline__item:last-child {
+    border-bottom-color: rgba(255, 255, 255, 0.18);
+  }
+
+  .section--photo .timeline__period,
+  .section--photo .timeline__org {
+    color: rgba(245, 245, 247, 0.72);
+  }
+
+  /* The white logo tiles already read correctly here, so they stay as-is. */
+  .section--photo .timeline__logo {
+    border-color: rgba(255, 255, 255, 0.25);
+  }
+
+  /* ---- Education ---- */
+
+  .edu {
+    /* One card per institution, sitting on the lighter panel behind them. */
+    --edu-card: #e7e7ec;
+    --edu-ink: #56565b;
+
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.7rem;
+  }
+
+  .edu__item {
+    padding: 1rem 1.05rem 1.1rem;
+    background: var(--edu-card);
+    border-radius: var(--radius);
+  }
+
+  .edu__head {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-bottom: 0.85em;
+  }
+
+  /* White tile so dark-on-transparent logos keep their contrast against the
+     darker card. Fixed square keeps every row aligned whatever shape it is. */
+  .edu__logo {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    padding: 5px;
+    background: #fff;
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .edu__logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .edu__mono {
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
     color: var(--text-muted);
   }
 
-  .panel__note code {
-    font-family: var(--font-mono);
-    font-size: 0.92em;
+  .edu__id {
+    display: grid;
+    gap: 0.2em;
+    min-width: 0;
+  }
+
+  .edu__school {
+    font-size: var(--step-0);
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  .edu__period {
+    font-size: var(--step--1);
+    color: var(--edu-ink);
+  }
+
+  .edu__award {
+    margin: 0 0 0.7em;
+    padding-bottom: 0.7em;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    font-size: var(--step--1);
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .edu__points {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.4rem;
+    font-size: var(--step--1);
+    line-height: 1.45;
+    color: var(--edu-ink);
+  }
+
+  .edu__points li {
+    position: relative;
+    padding-left: 0.95em;
+  }
+
+  .edu__points li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.58em;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #a5a5ac;
   }
 
   .timeline {
@@ -202,7 +515,8 @@ const skills = [
 
   .timeline__item {
     display: grid;
-    grid-template-columns: minmax(0, 200px) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 200px) minmax(0, 1fr) auto;
+    align-items: start;
     gap: clamp(1rem, 4vw, 3rem);
     padding: clamp(1.5rem, 3vw, 2.2rem) 0;
     border-top: 1px solid var(--line);
@@ -210,8 +524,62 @@ const skills = [
 
   .timeline__item:last-child { border-bottom: 1px solid var(--line); }
 
+  /* White tile, sized to the row, holding the employer mark. */
+  .timeline__logo {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 76px;
+    height: 76px;
+    padding: 10px;
+    background: #fff;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .timeline__logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .timeline__mono {
+    font-size: var(--step-0);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+  }
+
+  @media (max-width: 860px) {
+    .timeline__logo { width: 60px; height: 60px; padding: 8px; }
+  }
+
+  /* Single column: date and logo share the top row, copy below spans both. */
   @media (max-width: 640px) {
-    .timeline__item { grid-template-columns: 1fr; gap: 0.5rem; }
+    .timeline__item {
+      grid-template-columns: 1fr auto;
+      gap: 0.75rem 1rem;
+    }
+
+    .timeline__period {
+      grid-column: 1;
+      grid-row: 1;
+      align-self: center;
+    }
+
+    .timeline__logo {
+      grid-column: 2;
+      grid-row: 1;
+      width: 52px;
+      height: 52px;
+      padding: 7px;
+    }
+
+    .timeline__body {
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
   }
 
   .timeline__period {

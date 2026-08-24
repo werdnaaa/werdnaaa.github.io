@@ -4,8 +4,10 @@ import { getImage } from 'astro:assets';
 import Base from '../layouts/Base.astro';
 import VideoHero from '../components/VideoHero.astro';
 import ProjectCard from '../components/ProjectCard.astro';
+import { sortProjects } from '../lib/projects';
 import { SITE } from '../site';
 import jewelVortex from '../assets/jewel-singapore-vortex.jpg';
+import fpvQuad from '../assets/werdnaaa-fpv-quad.jpg';
 
 /**
  * Source photos live in src/assets/ (not public/) so Astro resizes and
@@ -18,36 +20,42 @@ const introBg = await getImage({
   quality: 60,
 });
 
+const contactBg = await getImage({
+  src: fpvQuad,
+  width: Math.min(1920, fpvQuad.width),
+  format: 'webp',
+  quality: 66,
+});
+
 const featured = (await getCollection('projects', ({ data }) => !data.draft))
-  .sort((a, b) => b.data.year - a.data.year || b.data.weight - a.data.weight)
+  .sort(sortProjects)
   .slice(0, 3);
 ---
 
 <Base overlayNav>
   <VideoHero
+    src="/video/hero-loop.mp4"
+    poster="/posters/hero-loop.webp"
     title="Hi, I'm Andrew!"
     kicker="You may know me as Werdna FPV"
     subtitle={SITE.tagline}
     subtitleNoWrap
     height="full"
   >
-    <a class="btn btn--light" href="/about/">Portfolio</a>
+    <a class="btn btn--light" href="/about/">About Me</a>
     <a class="btn btn--light" href="/projects/">Engineering Projects</a>
     <a class="btn btn--light" href="/fpv/">FPV Racing</a>
   </VideoHero>
-
-  <!-- Drop a montage loop into /public/video and point `src` at it:
-       <VideoHero src="/video/montage.mp4" poster="/posters/montage.jpg" ... /> -->
 
   <section class="section section--photo" style={`--photo: url('${introBg.src}')`}>
     <div class="wrap">
       <div class="intro reveal">
         <p class="eyebrow">Why does this page exist?</p>
-        <h2>It's a lot cooler than a LinkedIn Profile!</h2>
+        <h2>Why not though?</h2>
         <p class="lede">
           I am an Aerospace Engineering nerd who loves anything that flies!
-          Currently working at Changi Airport Group.
-          In my free time I am a professional FPV racing pilot and musical fountain designer.
+          I'm currently working at Changi Airport Group.
+          In my free time I fly FPV racing drones and design musical fountains.
         </p>
         <a class="link-arrow" href="/about/">About Me</a>
       </div>
@@ -58,8 +66,8 @@ const featured = (await getCollection('projects', ({ data }) => !data.draft))
     <div class="wrap">
       <header class="block-head reveal">
         <div>
-          <p class="eyebrow">Selected work</p>
-          <h2>Featured projects</h2>
+          <p class="eyebrow">What I've Been Cooking</p>
+          <h2>Feature Projects</h2>
         </div>
         <a class="link-arrow" href="/projects/">All projects</a>
       </header>
@@ -70,12 +78,17 @@ const featured = (await getCollection('projects', ({ data }) => !data.draft))
     </div>
   </section>
 
-  <section class="section section--deep">
+  <section
+    class="section section--deep section--photo section--photo-soft"
+    style={`--photo: url('${contactBg.src}')`}
+  >
     <div class="wrap cta reveal">
-      <p class="eyebrow">Get in touch</p>
-      <h2>Was supposed to put my LinkedIn here but...</h2>
+      <p class="eyebrow">A Shameless Plug</p>
+      <h2>Werdna FPV YouTube Channel</h2>
       <p class="lede cta__lede">
-        Instead, here's a shameless plug for my YouTube Channel. Please consider subscribing if you can!
+        My channel focuses on documenting my journey and experiences as a semi-pro FPV drone racing pilot.
+        I post vlogs, racing DVR footage, product reviews, and engineering content.
+        Please consider subscribing! It's free and you can always change your mind. :D
       </p>
       <a class="btn btn--light" href={SITE.contact.href} rel="noopener" target="_blank">
         {SITE.contact.label}
@@ -99,6 +112,13 @@ const featured = (await getCollection('projects', ({ data }) => !data.draft))
     color: var(--text-inverse);
   }
 
+  /* 20% wash for the contact block, as specified. */
+  .section--photo-soft {
+    background-image:
+      linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)),
+      var(--photo);
+  }
+
   .section--photo .eyebrow { color: rgba(245, 245, 247, 0.72); }
   .section--photo .lede { color: rgba(245, 245, 247, 0.92); }
 
@@ -109,6 +129,29 @@ const featured = (await getCollection('projects', ({ data }) => !data.draft))
 
   .intro {
     max-width: 68ch;
+  }
+
+  /* Justified, with hyphenation so the browser breaks words instead of
+     stretching word spacing into white rivers down the column. */
+  .intro p:not(.eyebrow) {
+    text-align: justify;
+    hyphens: auto;
+  }
+
+  @supports (-webkit-hyphens: auto) {
+    .intro p:not(.eyebrow) { -webkit-hyphens: auto; }
+  }
+
+  /* Too narrow to justify without large word gaps. */
+  @media (max-width: 620px) {
+    .intro p:not(.eyebrow) {
+      text-align: left;
+      hyphens: manual;
+    }
+
+    @supports (-webkit-hyphens: auto) {
+      .intro p:not(.eyebrow) { -webkit-hyphens: manual; }
+    }
   }
 
   .intro h2 {
@@ -131,14 +174,38 @@ const featured = (await getCollection('projects', ({ data }) => !data.draft))
 
   .block-head h2 { margin-bottom: 0; }
 
+  /* This block alone is centred — eyebrow, heading, body and button. */
   .cta {
     max-width: 62ch;
+    margin-inline: auto;
+    text-align: center;
   }
 
   .cta h2 { text-wrap: balance; }
 
+  /* Justified body, but the last line still centres with the rest of the
+     block rather than being flushed left. */
   .cta__lede {
     color: rgba(245, 245, 247, 0.72);
     margin-bottom: 1.8em;
+    text-align: justify;
+    text-align-last: center;
+    hyphens: auto;
+  }
+
+  @supports (-webkit-hyphens: auto) {
+    .cta__lede { -webkit-hyphens: auto; }
+  }
+
+  /* Narrow columns cannot justify without large gaps between words. */
+  @media (max-width: 620px) {
+    .cta__lede {
+      text-align: center;
+      hyphens: manual;
+    }
+
+    @supports (-webkit-hyphens: auto) {
+      .cta__lede { -webkit-hyphens: manual; }
+    }
   }
 </style>

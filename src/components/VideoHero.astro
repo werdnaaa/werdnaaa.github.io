@@ -16,6 +16,11 @@ interface Props {
   title: string;
   /** Small caps line BELOW the headline, for a secondary identity line. */
   kicker?: string;
+  /**
+   * Extra flat black laid over the media, 0-1, on top of the standard scrim.
+   * 0.5 renders the backdrop half as bright as it would otherwise be.
+   */
+  dim?: number;
   subtitle?: string;
   /**
    * Hold the subtitle on a single line. The type scales with the viewport so
@@ -33,6 +38,7 @@ const {
   eyebrow,
   title,
   kicker,
+  dim = 0,
   subtitle,
   subtitleNoWrap = false,
   height = 'full',
@@ -63,7 +69,11 @@ const {
         <div class="hero__placeholder" aria-hidden="true" />
       )
     }
-    <div class="hero__scrim" aria-hidden="true"></div>
+    <div
+      class="hero__scrim"
+      style={dim ? `--dim: ${dim}` : undefined}
+      aria-hidden="true"
+    ></div>
   </div>
 
   <div class="wrap hero__content">
@@ -118,16 +128,20 @@ const {
       linear-gradient(160deg, #2c2c31 0%, #17171a 60%, #0d0d0f 100%);
   }
 
-  /* Keeps headline contrast legible over bright frames. */
+  /* Keeps headline contrast legible over bright frames. The flat --dim layer
+     sits above the gradient, so it scales down whatever the gradient left:
+     --dim: 0.5 halves the remaining brightness. */
   .hero__scrim {
     position: absolute;
     inset: 0;
-    background: linear-gradient(
-      180deg,
-      rgba(0, 0, 0, 0.45) 0%,
-      rgba(0, 0, 0, 0.2) 35%,
-      rgba(0, 0, 0, 0.55) 100%
-    );
+    background:
+      linear-gradient(rgba(0, 0, 0, var(--dim, 0)), rgba(0, 0, 0, var(--dim, 0))),
+      linear-gradient(
+        180deg,
+        rgba(0, 0, 0, 0.45) 0%,
+        rgba(0, 0, 0, 0.2) 35%,
+        rgba(0, 0, 0, 0.55) 100%
+      );
   }
 
   .hero__content {

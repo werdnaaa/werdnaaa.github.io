@@ -1,6 +1,7 @@
 import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'zod';
+import { PROJECT_TAGS } from './lib/projects';
 
 /**
  * Adding a project = dropping a new .md file into src/content/projects/.
@@ -11,9 +12,26 @@ const projects = defineCollection({
   schema: z.object({
     title: z.string(),
     summary: z.string(),
-    year: z.number(),
-    role: z.string().optional(),
-    tags: z.array(z.string()).default([]),
+    /** First year of work. */
+    yearStart: z.number().int(),
+    /** Omit for a single-year project; 'present' for ongoing work. */
+    yearEnd: z.union([z.number().int(), z.literal('present')]).optional(),
+    /** What the project set out to achieve. */
+    goal: z.string().optional(),
+    /** Use logo.* as the card cover on the home page and projects grid. */
+    coverIsLogo: z.boolean().default(false),
+    /** Also show logo.* as a gallery slide. Independent of the cover. */
+    logoInAlbum: z.boolean().default(false),
+    /** Which gallery slot the logo occupies (0-based), when shown. */
+    logoAlbumIndex: z.number().int().min(0).default(0),
+    /**
+     * One-line caption per album image, keyed by the image filename without
+     * its extension (e.g. "01-onlygemfans"). Shown over the photo in the
+     * gallery. A bare number key like "01" works too.
+     */
+    captions: z.record(z.string(), z.string()).default({}),
+    /** Restricted to the shared vocabulary — an unknown tag fails the build. */
+    tags: z.array(z.enum(PROJECT_TAGS)).default([]),
     /** Poster image in /public/img — also the fallback for `video`. */
     cover: z.string().optional(),
     /** Short muted loop in /public/video, shown on card hover. */
@@ -22,7 +40,7 @@ const projects = defineCollection({
     embed: z.string().url().optional(),
     repo: z.string().url().optional(),
     link: z.string().url().optional(),
-    /** Higher sorts first within the same year. */
+    /** Manual tiebreak when two projects share the same years. */
     weight: z.number().default(0),
     featured: z.boolean().default(false),
     draft: z.boolean().default(false),
@@ -68,4 +86,23 @@ const fountains = defineCollection({
   }),
 });
 
-export const collections = { projects, flights, fountains };
+/**
+ * Blog posts on Christianity and apologetics. `tags` drive both the topic
+ * chips and the keyword search on /gospel/.
+ */
+const gospel = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/gospel' }),
+  schema: z.object({
+    title: z.string(),
+    summary: z.string(),
+    date: z.coerce.date(),
+    tags: z.array(z.string()).default([]),
+    /** Optional key passage shown on the card and post header. */
+    scripture: z.string().optional(),
+    /** Rough read time in minutes; omit and it is estimated from the body. */
+    readingTime: z.number().optional(),
+    draft: z.boolean().default(false),
+  }),
+});
+
+export const collections = { projects, flights, fountains, gospel };
