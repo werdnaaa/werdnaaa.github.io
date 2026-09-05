@@ -10,6 +10,7 @@ type Project = CollectionEntry<'projects'>;
  */
 export const PROJECT_TAGS = [
   '3D Printing',
+  'Arduino',
   'CAD',
   'Embedded',
   'Fluid Simulation',
@@ -104,13 +105,25 @@ export const albumFor = (
 /**
  * The image used wherever the project is shown from outside — cards on the
  * home page and the projects grid. Independent of the gallery: `coverIsLogo`
- * leads with logo.* even when the logo is not a slide at all.
+ * leads with logo.* even when the logo is not a slide at all, and `coverStem`
+ * promotes any album image to the cover without moving it in the slideshow —
+ * so the shot that sells the project can lead on the card while the album
+ * still runs in filename order. Falls back to the first album image.
  */
 export const coverFor = (
   slug: string,
-  { coverIsLogo = false }: { coverIsLogo?: boolean } = {},
-): ImageMetadata | undefined =>
-  (coverIsLogo ? logoFor(slug) : undefined) ?? albumFor(slug)[0]?.image;
+  {
+    coverIsLogo = false,
+    coverStem,
+  }: { coverIsLogo?: boolean; coverStem?: string } = {},
+): ImageMetadata | undefined => {
+  const album = albumFor(slug);
+  const chosen = coverStem
+    ? album.find((entry) => entry.stem === coverStem)?.image
+    : undefined;
+
+  return (coverIsLogo ? logoFor(slug) : undefined) ?? chosen ?? album[0]?.image;
+};
 
 /**
  * Caption lookup, deliberately forgiving about filenames. Tries the exact

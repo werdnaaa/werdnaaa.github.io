@@ -10,7 +10,7 @@
 export const SITE = {
   name: 'Andrew Yap',
   title: 'Andrew Yap',
-  tagline: 'Aerospace Engineer, Musical Fountain Builder, FPV Drone Pilot',
+  tagline: 'Aerospace Engineer, Musical Fountain Builder, Professional FPV Drone Pilot',
   description:
     'Portfolio and project archive — engineering work, things I have built, musical fountains, and FPV drone racing.',
   location: 'Singapore / Ann Arbor',

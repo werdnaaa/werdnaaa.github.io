@@ -112,6 +112,14 @@ const tags = [...new Set(projects.flatMap((p) => p.data.tags))].sort();
     opacity: 0.6;
   }
 
+  /* Three across at most, so a fourth project starts a new row rather than
+     squeezing the row into four narrow cards on a wide screen. Capped here
+     rather than on .grid--3, which other pages share. Below this width the
+     utility's own auto-fit handles the drop to two columns and then one. */
+  @media (min-width: 1000px) {
+    [data-project-grid] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
+
   .cell[hidden] { display: none; }
 
   .empty {

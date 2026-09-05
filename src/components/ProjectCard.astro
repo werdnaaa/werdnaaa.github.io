@@ -10,8 +10,12 @@ interface Props {
 const { project } = Astro.props;
 const { title, summary, goal, tags, cover, video } = project.data;
 const years = formatYears(project.data);
-// First album image wins; `cover` in front matter is the fallback.
-const poster = coverFor(project.id, { coverIsLogo: project.data.coverIsLogo });
+// First album image wins unless the front matter promotes another one;
+// `cover` in front matter is the fallback.
+const poster = coverFor(project.id, {
+  coverIsLogo: project.data.coverIsLogo,
+  coverStem: project.data.coverStem,
+});
 const href = `/projects/${project.id}/`;
 ---
 
@@ -75,7 +79,14 @@ const href = `/projects/${project.id}/`;
 </article>
 
 <style>
+  /* Grid rows stretch, but a block card inside a stretched cell keeps its
+     content height — which is what left a card with a shorter summary sitting
+     short of its neighbours. Filling the cell and letting the body flex makes
+     every card in a row the same box whatever the text length. */
   .card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
     background: var(--bg);
     border: 1px solid var(--line-soft);
     border-radius: var(--radius);
@@ -90,9 +101,16 @@ const href = `/projects/${project.id}/`;
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.07);
   }
 
-  .card__link { display: block; height: 100%; }
+  .card__link {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
 
+  /* flex: none so the media keeps its ratio instead of being squeezed to make
+     room for a long summary. */
   .card__media {
+    flex: none;
     aspect-ratio: 16 / 10;
     background: var(--bg-alt);
     overflow: hidden;
@@ -116,7 +134,12 @@ const href = `/projects/${project.id}/`;
       );
   }
 
-  .card__body { padding: 1.4rem 1.5rem 1.6rem; }
+  .card__body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    padding: 1.4rem 1.5rem 1.6rem;
+  }
 
   .card__meta {
     display: flex;
@@ -141,7 +164,12 @@ const href = `/projects/${project.id}/`;
 
   .card__tags { margin-bottom: 1.2em; }
 
-  .card__cta { font-weight: 700; }
+  /* Pushed to the bottom of the body, so the CTA lines up across a row
+     instead of floating wherever the summary happens to end. */
+  .card__cta {
+    margin-top: auto;
+    font-weight: 700;
+  }
 </style>
 
 <script>

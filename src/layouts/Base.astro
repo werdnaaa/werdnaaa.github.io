@@ -1,6 +1,7 @@
 ---
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
+import BackToTop from '../components/BackToTop.astro';
 import { SITE } from '../site';
 import '../styles/global.css';
 import { readFileSync } from 'node:fs';
@@ -67,6 +68,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <Nav overlay={overlayNav} />
     <main id="main"><slot /></main>
     <Footer />
+    <BackToTop />
 
     <script>
       // Fade sections in as they scroll into view. Anything marked .reveal is

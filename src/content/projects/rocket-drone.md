@@ -1,11 +1,11 @@
 ---
 title: "Sub-250g Rocket Drone"
-summary: "Pushing the limits of micro drone flight with an aerodynamic quadrotor. Featuring an elliptical body and NACA0012 airfoils."
+summary: "Pushing the limits of micro drone flight with an aerodynamic quadrotor design. Featuring an elliptical body shape and NACA0012 airfoils for minimum drag."
 yearStart: 2025
 yearEnd: 2025
 goal: "Go Fast"
 tags: ["Fluid Simulation", "Radio Control", "CAD", "3D Printing"]
-coverIsLogo: true
+coverStem: "rocket-drone-0"
 captions:
   rocket-drone-2: "Rocket Drone CAD with labels"
   rocket-drone-3: "Star-CCM+ geometry results"

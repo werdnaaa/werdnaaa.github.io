@@ -1,6 +1,6 @@
 ---
-title: "OnlyGemfans Handheld Fan"
-summary: "An 80 Watt Jisulife destroyer with inbuilt floodlight, powerbank, USB-C balance charging and its own cooling fan (#fanception)"
+title: "OnlyGemfans Electric Fan"
+summary: "An 80 Watt Jisulife destroyer with an inbuilt floodlight, powerbank, USB-C balance charging and its very own cooling fan (#fanception????)"
 yearStart: 2025
 yearEnd: 2026        # or "present" for ongoing work
 goal: "Product Design"

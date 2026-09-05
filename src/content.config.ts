@@ -6,6 +6,11 @@ import { PROJECT_TAGS } from './lib/projects';
 /**
  * Adding a project = dropping a new .md file into src/content/projects/.
  * The grid, the tag filters and the detail page all build themselves from it.
+ *
+ * NOTE: the dev server reloads this file when it changes, but NOT when
+ * lib/projects.ts changes. So after adding a tag to PROJECT_TAGS, restart the
+ * dev server — otherwise the schema keeps validating against the old list and
+ * every project using the new tag is silently dropped from the collection.
  */
 const projects = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/projects' }),
@@ -20,6 +25,12 @@ const projects = defineCollection({
     goal: z.string().optional(),
     /** Use logo.* as the card cover on the home page and projects grid. */
     coverIsLogo: z.boolean().default(false),
+    /**
+     * Promote one album image to the card cover by its filename without the
+     * extension (e.g. "hovercraft-4"), leaving its place in the gallery
+     * untouched. Ignored when `coverIsLogo` is set.
+     */
+    coverStem: z.string().optional(),
     /** Also show logo.* as a gallery slide. Independent of the cover. */
     logoInAlbum: z.boolean().default(false),
     /** Which gallery slot the logo occupies (0-based), when shown. */

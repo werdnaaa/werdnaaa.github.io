@@ -1,24 +1,174 @@
 ---
-import { getCollection } from 'astro:content';
+import { Image, getImage } from 'astro:assets';
 import Base from '../layouts/Base.astro';
 import VideoHero from '../components/VideoHero.astro';
+import fiveInch from '../assets/fpv/5inch.jpg';
+import sevenInch from '../assets/fpv/7inch.jpg';
+import podium from '../assets/fpv/4X1A7763.jpg';
 
-const flights = (await getCollection('flights', ({ data }) => !data.draft)).sort(
-  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
-);
-
-const fmt = new Intl.DateTimeFormat('en-GB', {
-  day: 'numeric',
-  month: 'short',
-  year: 'numeric',
+// Backdrop for the achievements table. It sits behind a 50% black scrim and
+// is never the subject, so it can take heavier compression than a photo
+// meant to be looked at directly.
+const winsBg = await getImage({
+  src: podium,
+  width: Math.min(1920, podium.width),
+  format: 'webp',
+  quality: 60,
 });
 
-// Placeholder stats — swap for real numbers, or delete the block entirely.
-const stats = [
-  { value: '5"', label: 'Main class' },
-  { value: '6S', label: 'Battery' },
-  { value: '2021', label: 'Flying since' },
-  { value: '—', label: 'Best lap' },
+interface Sponsor {
+  name: string;
+  since: number;
+  logo: string;
+  /** The card becomes a link to this. */
+  url?: string;
+  /**
+   * Optical size tweak, 0-1. The boxes are all identical, but a squarish
+   * logo fills one edge to edge while a long wordmark leaves air around
+   * itself, so the squarish ones read as oversized. Scale is a transform,
+   * so it never affects the box.
+   */
+  scale?: number;
+}
+
+// Logos live in public/img/logos/. Listed in whatever order reads best here;
+// the sort below is what the page actually renders, oldest partnership first
+// (stable, so same-year entries keep this order).
+const sponsors: Sponsor[] = [
+  {
+    name: 'Radiomaster',
+    since: 2024,
+    logo: '/img/logos/radiomaster.png',
+    url: 'https://radiomasterrc.com/',
+  },
+  {
+    name: 'VCI',
+    since: 2024,
+    logo: '/img/logos/vci.jpg',
+    url: 'https://www.vcihobby.com/',
+    scale: 0.78,
+  },
+  {
+    name: 'Aerial Outlaws',
+    since: 2024,
+    logo: '/img/logos/aerial-outlaws-logo.png',
+    url: 'https://www.aerialoutlaws.com/',
+  },
+  {
+    name: 'Rush FPV',
+    since: 2023,
+    logo: '/img/logos/rush.jpg',
+    url: 'https://rushfpv.net/',
+  },
+  {
+    name: 'BetaFPV',
+    since: 2021,
+    logo: '/img/logos/betafpv.png',
+    url: 'https://betafpv.com/werdnafpv',
+  },
+  {
+    name: 'Gemfan',
+    since: 2022,
+    logo: '/img/logos/gemfan.png',
+    url: 'https://www.gemfanhobby.com/',
+  },
+  {
+    name: 'WREKD',
+    since: 2023,
+    logo: '/img/logos/wrekd.jpg',
+    url: 'https://wrekd.com/werdna',
+  },
+  // HDZero is Divimath's brand, hence the filename.
+  {
+    name: 'HDZero',
+    since: 2025,
+    logo: '/img/logos/divimath.png',
+    url: 'https://www.hd-zero.com/shop',
+  },
+].sort((a, b) => a.since - b.since);
+
+interface Achievement {
+  year: number | string;
+  location: string;
+  event: string;
+  result: string;
+}
+
+// Newest first.
+const achievements: Achievement[] = [
+  { year: '2026', location: 'Kuala Lumpur, Malaysia', event: 'MyAERO Whoop Race', result: '1st Place, TQ' },
+  { year: '2026', location: 'Lucan, Canada', event: 'Canadian Whoop Championship', result: '1st Place' },
+  { year: '2026', location: 'Sydney, Australia', event: 'MIDRT Sydney', result: '1st Place Military' },
+  { year: '2026', location: 'Phoenix, United States', event: 'Whooptopia WeBLEED500 (Team New Jeans)', result: '2nd Place' },
+  { year: '2025', location: 'Ware, United Kingdom', event: 'Ware FPV British Whoop Championship', result: '2nd Place' },
+  { year: '2025', location: 'Muncie, United States', event: 'MultiGP IO Whoop Tent', result: '3rd Place' },
+  { year: '2025', location: 'Plattsburgh, United States', event: 'MIDRT USA', result: '3rd Place Military' },
+  { year: '2025', location: 'Phoenix, United States', event: 'Whooptopia UDL', result: '3rd Place, TQ' },
+  { year: '2024', location: 'London, United Kingdom', event: 'MIDRT London', result: '1st Place Military' },
+  { year: '2024', location: 'Kuala Lumpur, Malaysia', event: 'Malaysia Drone League S2 Whoop Race', result: '1st Place, TQ' },
+  { year: '2024', location: 'Olsztyn, Poland', event: 'Whoop of Poland Olsztyn', result: '1st Place, TQ' },
+  { year: '2024', location: 'Ohio, United States', event: 'Underground Whoop League Championship', result: '3rd Place' },
+  { year: '2024', location: 'Phoenix, United States', event: 'Whooptopia', result: '3rd Place' },
+  { year: '2023', location: 'Johor Bahru, Malaysia', event: 'Malaysia Drone League S2 Whoop Race', result: '1st Place, TQ' },
+  { year: '2022', location: 'Seoul, South Korea', event: 'FAI KAMA World Cup', result: '6th Place' },
+  { year: '2022', location: 'Singapore', event: 'Singapore Army Open House', result: '1st Place, TQ' },
+  { year: '2022', location: 'Singapore', event: 'Singapore Amazing Flying Machine Competition', result: '3rd Place, TQ' },
+  { year: '2021', location: 'Singapore', event: 'ITE Aviation GP Race', result: '2nd Place' },
+  { year: '2021', location: 'Singapore', event: 'Whoop Arena Championship', result: '1st Place, TQ' },
+  { year: '2021', location: 'Singapore', event: 'Singapore Amazing Flying Machine Competition', result: '1st Place' },
+  { year: '2020', location: 'Singapore', event: 'D1 Masters League', result: '1st Place' },
+  { year: '2020', location: 'India', event: 'Indian Drone Racing League Covid Race', result: '1st Place' },
+  { year: '2019', location: 'Singapore', event: 'Singapore Amazing Flying Machine Competition', result: '2nd Place' },
+];
+
+interface Track {
+  /** Track name as published on Velocidrone. */
+  velocidrone: string;
+  /** The race the track was built for. */
+  race: string;
+  location: string;
+  year: number | string;
+  /** Drop a photo into src/assets/fpv/, import it, and set it here. */
+  image?: ImageMetadata;
+}
+
+// Placeholder until the real tracks go in.
+const tracks: Track[] = [
+  { velocidrone: '—', race: '—', location: '—', year: '—' },
+];
+
+interface Setup {
+  title: string;
+  image: ImageMetadata;
+  specs: [string, string][];
+}
+
+// Swap the '—' placeholders for real spec values.
+const setups: Setup[] = [
+  {
+    title: '5" Racer',
+    image: fiveInch,
+    specs: [
+      ['Frame', 'WREKD Hoku V2'],
+      ['Stack', 'Rush Blade F722 V2 Mini + Blade 60A'],
+      ['Motor', 'VCI Yuki Savage 2120KV'],
+      ['Video System', 'HDZero Nano90 V2 + Race V3'],
+      ['Control System', 'Radiomaster ELRS'],
+      ['Battery', 'SMC 1600mah 6S'],
+    ],
+  },
+  {
+    title: '7" Mountain Cruiser',
+    image: sevenInch,
+    specs: [
+      ['Frame', 'Rush Aquila7'],
+      ['Stack', 'Rush 30x30 F722 Stack'],
+      ['Motor', 'VCI 2808 1350KV'],
+      ['Video System', 'Analog 2.5W VTX'],
+      ['Control System', 'TBS Crossfire Diversity'],
+      ['Battery', 'DIY 4S2P Li-Ion'],
+    ],
+  },
 ];
 ---
 
@@ -28,201 +178,612 @@ const stats = [
   overlayNav
 >
   <VideoHero
-    eyebrow="FPV"
-    title="Drone Racing"
-    subtitle="Builds, tuning notes and raw runs. Mostly 5-inch, mostly too close to the gates."
-    height="full"
+    src="/video/hanni.mp4"
+    eyebrow="The world of"
+    title="FPV Drone Racing"
+    subtitle="I design, build and tune FPV drones. I then take
+    them around the world and race  competitively against pilots from other countries. As they say, FPV is life!"
+    dim={0.1}
   >
-    <a class="btn btn--light" href="#runs">Watch the runs</a>
+    <a class="btn btn--light" href="#sponsors">My Sponsors</a>
+    <a class="btn btn--light" href="#setups">My Setups</a>
+    <a class="btn btn--light" href="#achievements">My Achievements</a>
   </VideoHero>
 
-  <section class="section">
+  <section class="section section--alt" id="sponsors">
     <div class="wrap">
-      <div class="intro reveal">
-        <p class="eyebrow">The setup</p>
-        <h2>Fly, crash, solder, repeat.</h2>
-        <p class="lede">
-          Write a few lines here about how you got into FPV, what you fly, and
-          what you are chasing — race times, freestyle lines, or just the flying.
-        </p>
-      </div>
+      <p class="eyebrow reveal">Backing the builds</p>
+      <h2 class="reveal">My Sponsors</h2>
 
-      <dl class="stats">
-        {stats.map((stat) => (
-          <div class="stat reveal">
-            <dt class="stat__label">{stat.label}</dt>
-            <dd class="stat__value">{stat.value}</dd>
-          </div>
-        ))}
-      </dl>
+      <div class="grid grid--3 sponsors">
+        {sponsors.map(({ name, since, logo, url, scale }) => {
+          // Falls back to a plain <div> for any sponsor without a `url` — the
+          // hover treatment is identical either way.
+          const Card = url ? 'a' : 'div';
+          return (
+            <Card
+              class="sponsor reveal"
+              href={url}
+              target={url ? '_blank' : undefined}
+              rel={url ? 'noopener noreferrer' : undefined}
+            >
+              <div class="sponsor__logo" style={scale ? `--logo-scale: ${scale}` : undefined}>
+                <img src={logo} alt={name} loading="lazy" decoding="async" />
+              </div>
+              <p class="sponsor__since">Since {since}</p>
+            </Card>
+          );
+        })}
+      </div>
     </div>
   </section>
 
-  <section class="section section--alt" id="runs">
+  <section class="section" id="setups">
     <div class="wrap">
-      <p class="eyebrow reveal">Footage</p>
-      <h2 class="reveal">Runs &amp; sessions</h2>
+      <p class="eyebrow reveal">The Fleet</p>
+      <h2 class="reveal">My Setups</h2>
 
-      {
-        flights.length === 0 ? (
-          <p class="muted">
-            No runs logged yet — add a markdown file to <code>src/content/flights/</code>.
-          </p>
-        ) : (
-          <div class="grid grid--2 runs">
-            {flights.map((flight) => (
-              <article class="run reveal">
-                <div class="run__media">
-                  {flight.data.embed ? (
-                    <iframe
-                      src={flight.data.embed}
-                      title={flight.data.title}
-                      loading="lazy"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowfullscreen
-                    />
-                  ) : flight.data.video ? (
-                    <video
-                      poster={flight.data.cover}
-                      controls
-                      playsinline
-                      preload="none"
-                    >
-                      <source src={flight.data.video} type="video/mp4" />
-                    </video>
-                  ) : flight.data.cover ? (
-                    <img src={flight.data.cover} alt={flight.data.title} loading="lazy" />
-                  ) : (
-                    <div class="run__empty" aria-hidden="true" />
-                  )}
-                </div>
+      <div class="setups reveal" data-carousel>
+        <div class="setups__stage">
+          {setups.map((setup, i) => (
+            <article class:list={['setup', { 'is-active': i === 0 }]} data-slide={i}>
+              <div class="setup__media">
+                <Image
+                  src={setup.image}
+                  alt={setup.title}
+                  widths={[640, 960, 1280]}
+                  sizes="(max-width: 720px) 100vw, 640px"
+                  loading={i === 0 ? 'eager' : 'lazy'}
+                  decoding="async"
+                />
+              </div>
+              <div class="setup__info">
+                <h3 class="setup__title">{setup.title}</h3>
+                <table class="setup__specs">
+                  <tbody>
+                    {setup.specs.map(([label, value]) => (
+                      <tr>
+                        <th scope="row">{label}</th>
+                        <td>{value}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </article>
+          ))}
+        </div>
 
-                <div class="run__body">
-                  <p class="run__meta">
-                    <span>{fmt.format(flight.data.date)}</span>
-                    {flight.data.location && (
-                      <>
-                        <span aria-hidden="true">&middot;</span>
-                        <span>{flight.data.location}</span>
-                      </>
-                    )}
-                  </p>
-                  <h3 class="run__title">{flight.data.title}</h3>
-                  {flight.data.craft && <p class="run__craft">{flight.data.craft}</p>}
-                  {flight.data.summary && <p class="muted">{flight.data.summary}</p>}
-                </div>
-              </article>
-            ))}
+        {setups.length > 1 && (
+          <div class="setups__controls">
+            <button class="setups__nav" type="button" aria-label="Previous setup" data-prev>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M15 4 L7 12 L15 20" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+
+            <div class="setups__dots" role="group" aria-label="Choose setup">
+              {setups.map((setup, i) => (
+                <button
+                  class="setups__dot"
+                  type="button"
+                  aria-label={setup.title}
+                  aria-current={i === 0}
+                  data-dot={i}
+                />
+              ))}
+            </div>
+
+            <button class="setups__nav" type="button" aria-label="Next setup" data-next>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 4 L17 12 L9 20" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
           </div>
-        )
-      }
+        )}
+      </div>
+    </div>
+  </section>
 
-      <p class="note">
-        Full-length footage belongs on YouTube or Vimeo, not in this repo — set
-        <code>embed</code> in the markdown front matter and it renders here.
-        Keep only short, compressed loops in <code>/public/video</code>.
+  <section
+    class="section wins-section"
+    id="achievements"
+    style={`--wins-bg: url(${winsBg.src})`}
+  >
+    <div class="wrap">
+      <p class="eyebrow reveal">Results</p>
+      <h2 class="reveal">My Achievements</h2>
+
+      <p class="lede wins__intro reveal">
+        Having travelled for countless drone races, this is a short list of the
+        events where I fared better and ended up in a podium or winning
+        position. It's been such a joy to have the opportunity to travel around
+        the world and partake in friendly competition with my fellow pilots!
       </p>
+
+      <div class="wins reveal">
+        <table class="wins__table">
+          <thead>
+            <tr>
+              <th scope="col">Year</th>
+              <th scope="col">Location</th>
+              <th scope="col">Event</th>
+              <th scope="col">Achievement</th>
+            </tr>
+          </thead>
+          <tbody>
+            {achievements.map((row) => (
+              <tr>
+                <td class="wins__year">{row.year}</td>
+                <td>{row.location}</td>
+                <td>{row.event}</td>
+                <td>{row.result}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="tracks">
+    <div class="wrap">
+      <p class="eyebrow reveal">I also do</p>
+      <h2 class="reveal">Race Track Design</h2>
+
+      <div class="setups tracks reveal" data-carousel>
+        <div class="setups__stage">
+          {tracks.map((track, i) => (
+            <article class:list={['track', { 'is-active': i === 0 }]} data-slide={i}>
+              <div class="track__media">
+                {track.image ? (
+                  <Image
+                    src={track.image}
+                    alt={`${track.velocidrone} — track layout`}
+                    widths={[640, 960, 1280]}
+                    sizes="(max-width: 820px) 100vw, 820px"
+                    loading={i === 0 ? 'eager' : 'lazy'}
+                    decoding="async"
+                  />
+                ) : (
+                  <div class="track__empty" aria-hidden="true" />
+                )}
+              </div>
+
+              <dl class="track__meta">
+                <div class="track__field">
+                  <dt>Location</dt>
+                  <dd>{track.location}</dd>
+                </div>
+                <div class="track__field">
+                  <dt>Year</dt>
+                  <dd>{track.year}</dd>
+                </div>
+                <div class="track__field">
+                  <dt>Race</dt>
+                  <dd>{track.race}</dd>
+                </div>
+                <div class="track__field">
+                  <dt>Velocidrone track</dt>
+                  <dd>{track.velocidrone}</dd>
+                </div>
+              </dl>
+            </article>
+          ))}
+        </div>
+
+        {tracks.length > 1 && (
+          <div class="setups__controls">
+            <button class="setups__nav" type="button" aria-label="Previous track" data-prev>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M15 4 L7 12 L15 20" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+
+            <div class="setups__dots" role="group" aria-label="Choose track">
+              {tracks.map((track, i) => (
+                <button
+                  class="setups__dot"
+                  type="button"
+                  aria-label={track.velocidrone}
+                  aria-current={i === 0}
+                  data-dot={i}
+                />
+              ))}
+            </div>
+
+            <button class="setups__nav" type="button" aria-label="Next track" data-next>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 4 L17 12 L9 20" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   </section>
 </Base>
 
 <style>
-  .intro { max-width: 62ch; }
-  .intro h2 { margin-bottom: 0.5em; text-wrap: balance; }
+  .sponsors { margin-top: clamp(2rem, 4vw, 3rem); }
 
-  .stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 1px;
-    margin: clamp(2.5rem, 6vw, 4rem) 0 0;
-    background: var(--line);
-    border: 1px solid var(--line);
+  /* Also the <a> when a sponsor has a url, so kill the link styling. */
+  .sponsor {
+    display: block;
+    color: inherit;
+    text-decoration: none;
   }
 
-  .stat {
-    padding: clamp(1.4rem, 3vw, 2rem);
+  /* `aspect-ratio` alone is only a preference — an in-flow child can still
+     push the box taller, which is what made the squarer logos sit on taller
+     cards. Taking the image out of flow entirely makes the ratio absolute,
+     so every box is the same size whatever shape the artwork is. */
+  .sponsor__logo {
+    position: relative;
+    aspect-ratio: 3 / 2;
+    background: var(--bg);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: transform 0.28s var(--ease), box-shadow 0.28s var(--ease),
+      border-color 0.28s var(--ease);
+  }
+
+  /* Padding on the image itself, since an absolutely positioned child insets
+     from the padding box and would otherwise ignore padding on the parent.
+     --logo-scale trims a logo that reads oversized: a long wordmark leaves
+     air around itself while a squarish one fills the box edge to edge, and
+     scaling is a transform, so it never feeds back into the layout. */
+  .sponsor__logo img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    padding: clamp(1rem, 3vw, 1.75rem);
+    object-fit: contain;
+    scale: var(--logo-scale, 1);
+  }
+
+  /* Lift on hover — the affordance for the link the card now carries. */
+  .sponsor:hover .sponsor__logo,
+  .sponsor:focus-visible .sponsor__logo {
+    transform: translateY(-6px) scale(1.035);
+    box-shadow: 0 16px 30px rgba(0, 0, 0, 0.14);
+    border-color: var(--line);
+  }
+
+  .sponsor:focus-visible { outline: none; }
+
+  .sponsor:focus-visible .sponsor__logo {
+    outline: 2px solid var(--text);
+    outline-offset: 3px;
+  }
+
+  /* The global reduce-motion rule zeroes the transition, which would make the
+     lift snap. Keep the shadow as the hover cue and drop the movement. */
+  @media (prefers-reduced-motion: reduce) {
+    .sponsor:hover .sponsor__logo,
+    .sponsor:focus-visible .sponsor__logo {
+      transform: none;
+    }
+  }
+
+  /* Micro box under the logo — deliberately smaller and tighter so it reads
+     as a caption on the card above it, not as a second card. */
+  .sponsor__since {
+    margin: 0.5rem 0 0;
+    padding: 0.35em 0.75em;
+    background: var(--bg);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    font-size: var(--step--1);
+    letter-spacing: 0.06em;
+    text-align: center;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .setups { margin-top: clamp(2rem, 4vw, 3rem); }
+
+  .setup {
+    display: none;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: clamp(1.5rem, 4vw, 3rem);
+    align-items: start;
+  }
+
+  .setup.is-active { display: grid; }
+
+  .setup__media {
+    aspect-ratio: 3 / 2;
+    background: var(--bg-alt);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .setup__media img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .setup__title { margin: 0.4em 0 1em; }
+
+  .setup__specs {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--step--1);
+  }
+
+  .setup__specs tr { border-bottom: 1px solid var(--line-soft); }
+  .setup__specs tr:last-child { border-bottom: 0; }
+
+  .setup__specs th,
+  .setup__specs td { padding: 0.6em 0; }
+
+  .setup__specs th {
+    padding-right: 1.5em;
+    font-weight: 600;
+    text-align: left;
+    letter-spacing: 0.02em;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  @media (max-width: 720px) {
+    .setup { grid-template-columns: 1fr; }
+  }
+
+  .setups__controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.25rem;
+    margin-top: 1.5rem;
+  }
+
+  .setups__nav {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    color: var(--text);
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.2s var(--ease), border-color 0.2s var(--ease);
+  }
+
+  .setups__nav:hover { border-color: var(--text); }
+  .setups__nav svg { width: 18px; height: 18px; }
+
+  .setups__dots {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .setups__dot {
+    width: 7px;
+    height: 7px;
+    padding: 0;
+    background: var(--line);
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.2s var(--ease), scale 0.2s var(--ease);
+  }
+
+  .setups__dot:hover { background: var(--text-muted); }
+
+  .setups__dot[aria-current='true'] {
+    background: var(--text);
+    scale: 1.3;
+  }
+
+  /* Photo backdrop. The scrim is a ::before rather than a gradient baked into
+     `background` so the 50% is a single number that is easy to retune. */
+  .wins-section {
+    position: relative;
+    isolation: isolate;
+    color: #fff;
+    background-image: var(--wins-bg);
+    background-size: cover;
+    background-position: center;
+  }
+
+  .wins-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  /* The heading block sits directly on the photo, so its muted grey has to be
+     restated. The table below gets its own panel instead. */
+  .wins-section .eyebrow { color: rgba(255, 255, 255, 0.75); }
+
+  .wins__intro {
+    max-width: var(--measure);
+    margin-top: 1.2rem;
+    color: rgba(255, 255, 255, 0.92);
+    text-align: justify;
+    /* Justified text opens rivers of whitespace without hyphenation to help
+       it break long words. */
+    hyphens: auto;
+  }
+
+  /* Frosted panel so the small table type reads against a busy photo. Held
+     under full opacity, with the blur doing the legibility work, so the image
+     still shows through rather than being boxed out.
+
+     Four columns of prose also need more width than a phone has, so the table
+     scrolls inside this box rather than pushing the page sideways. */
+  .wins {
+    margin-top: clamp(2rem, 4vw, 3rem);
+    padding: clamp(1.1rem, 3vw, 2rem);
+    overflow-x: auto;
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.58);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: var(--radius);
+    backdrop-filter: blur(10px) saturate(130%);
+  }
+
+  @supports (-webkit-backdrop-filter: blur(1px)) {
+    .wins { -webkit-backdrop-filter: blur(10px) saturate(130%); }
+  }
+
+  /* No blur available means the panel is doing the work alone, so make it
+     more opaque rather than leaving the text over bare photo. */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .wins { background: rgba(255, 255, 255, 0.8); }
+  }
+
+  /* Sized so the longest event name ("Singapore Amazing Flying Machine
+     Competition") and the longest venue sit on one line each on desktop. */
+  .wins__table {
+    width: 100%;
+    min-width: 44rem;
+    border-collapse: collapse;
+    text-align: left;
+  }
+
+  .wins__table th,
+  .wins__table td {
+    padding: 0.85em 1.2em 0.85em 0;
+    vertical-align: top;
+  }
+
+  .wins__table thead th {
+    font-size: var(--step--1);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+
+  .wins__table tbody tr { border-bottom: 1px solid var(--line-soft); }
+  .wins__table tbody tr:last-child { border-bottom: 0; }
+
+  .wins__year {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  /* Track slides stack in the same way the setup slides do, but the photo
+     runs full width with its details underneath rather than beside it. */
+  .track {
+    display: none;
+    gap: clamp(1.25rem, 3vw, 2rem);
+  }
+
+  .track.is-active { display: block; }
+
+  .track__media {
+    aspect-ratio: 16 / 9;
+    background: var(--bg-alt);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .track__media :global(img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* Stand-in until real track photos are dropped in. */
+  .track__empty {
+    width: 100%;
+    height: 100%;
+    background:
+      radial-gradient(ellipse at 30% 20%, #4a4a52 0%, transparent 55%),
+      linear-gradient(160deg, #2c2c31 0%, #17171a 60%, #0d0d0f 100%);
+  }
+
+  .track__meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1px;
+    margin: clamp(1.25rem, 3vw, 1.75rem) 0 0;
+    background: var(--line-soft);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .track__field {
+    padding: 0.9rem 1.1rem;
     background: var(--bg);
   }
 
-  .stat__label {
-    margin-bottom: 0.4em;
+  .track__field dt {
+    margin-bottom: 0.35em;
     font-size: var(--step--1);
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--text-muted);
   }
 
-  .stat__value {
+  .track__field dd {
     margin: 0;
-    font-size: var(--step-2);
-    font-weight: 700;
-    letter-spacing: -0.02em;
-  }
-
-  .runs { margin-top: clamp(2rem, 4vw, 3rem); }
-
-  .run {
-    background: var(--bg);
-    border: 1px solid var(--line-soft);
-    border-radius: var(--radius);
-    overflow: hidden;
-  }
-
-  .run__media {
-    position: relative;
-    aspect-ratio: 16 / 9;
-    background: var(--bg-deep);
-  }
-
-  .run__media iframe,
-  .run__media video,
-  .run__media img {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    border: 0;
-    object-fit: cover;
-  }
-
-  .run__empty {
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(160deg, #2c2c31, #0d0d0f);
-  }
-
-  .run__body { padding: 1.3rem 1.5rem 1.6rem; }
-
-  .run__meta {
-    display: flex;
-    gap: 0.5em;
-    margin: 0 0 0.5em;
-    font-size: var(--step--1);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-  }
-
-  .run__title { margin-bottom: 0.25em; }
-
-  .run__craft {
-    margin-bottom: 0.7em;
-    font-family: var(--font-mono);
-    font-size: var(--step--1);
-    color: var(--text-muted);
-  }
-
-  .note {
-    max-width: var(--measure);
-    margin-top: clamp(2rem, 4vw, 3rem);
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--line);
-    font-size: var(--step--1);
-    color: var(--text-muted);
-  }
-
-  code {
-    font-family: var(--font-mono);
-    font-size: 0.92em;
+    font-weight: 600;
+    text-wrap: pretty;
   }
 </style>
+
+<script>
+  // Drives both carousels on this page (setups and tracks). Each slide holds
+  // its own photo *and* its own text, so prev/next/dots change them together.
+  document.querySelectorAll<HTMLElement>('[data-carousel]').forEach((root) => {
+    const slides = [...root.querySelectorAll<HTMLElement>('[data-slide]')];
+    if (slides.length < 2) return;
+
+    const dots = [...root.querySelectorAll<HTMLButtonElement>('[data-dot]')];
+    let index = 0;
+
+    const show = (next: number) => {
+      index = ((next % slides.length) + slides.length) % slides.length;
+      slides.forEach((slide, i) => slide.classList.toggle('is-active', i === index));
+      dots.forEach((dot, i) => dot.setAttribute('aria-current', String(i === index)));
+    };
+
+    root.querySelector('[data-prev]')?.addEventListener('click', () => show(index - 1));
+    root.querySelector('[data-next]')?.addEventListener('click', () => show(index + 1));
+    dots.forEach((dot, i) => dot.addEventListener('click', () => show(i)));
+
+    root.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowLeft') { event.preventDefault(); show(index - 1); }
+      if (event.key === 'ArrowRight') { event.preventDefault(); show(index + 1); }
+    });
+
+    // Horizontal swipe on touch devices.
+    let startX = 0;
+    let tracking = false;
+
+    root.addEventListener('touchstart', (event) => {
+      startX = event.changedTouches[0].screenX;
+      tracking = true;
+    }, { passive: true });
+
+    root.addEventListener('touchend', (event) => {
+      if (!tracking) return;
+      tracking = false;
+      const delta = event.changedTouches[0].screenX - startX;
+      if (Math.abs(delta) > 45) show(index + (delta < 0 ? 1 : -1));
+    }, { passive: true });
+  });
+</script>

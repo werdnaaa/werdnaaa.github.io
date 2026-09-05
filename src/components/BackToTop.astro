@@ -1,0 +1,123 @@
+---
+/**
+ * Floating "back to top" control, fixed to the bottom-right of every page.
+ *
+ * Stays hidden until the visitor is far enough down that the top is out of
+ * reach, so it never sits over a hero or a first screenful. Rendered once in
+ * the layout, so there is no per-page wiring.
+ */
+---
+
+<button class="to-top" type="button" aria-label="Back to top" data-to-top hidden>
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path
+      d="M6 14 L12 8 L18 14"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+  </svg>
+</button>
+
+<style>
+  /* Sits below the header (z-index 100) so it can never cover the nav, and
+     clears the iOS home indicator via the safe-area insets. */
+  .to-top {
+    position: fixed;
+    right: max(1.25rem, env(safe-area-inset-right));
+    bottom: max(1.25rem, env(safe-area-inset-bottom));
+    z-index: 90;
+
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+
+    color: #fff;
+    /* Translucent charcoal rather than a solid: it settles into whatever is
+       behind it — white sections, the alt grey, or a full-bleed photo —
+       instead of stamping a hard shape onto the page. */
+    background: rgba(29, 29, 31, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 50%;
+    backdrop-filter: blur(10px) saturate(140%);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+    cursor: pointer;
+
+    /* Hidden state. Kept in the DOM and faded rather than toggled off, so
+       showing and hiding it can be animated. */
+    opacity: 0;
+    visibility: hidden;
+    translate: 0 8px;
+    transition: opacity 0.28s var(--ease), visibility 0.28s var(--ease),
+      translate 0.28s var(--ease), background-color 0.2s var(--ease);
+  }
+
+  @supports (-webkit-backdrop-filter: blur(1px)) {
+    .to-top { -webkit-backdrop-filter: blur(10px) saturate(140%); }
+  }
+
+  .to-top.is-visible {
+    opacity: 1;
+    visibility: visible;
+    translate: 0 0;
+  }
+
+  .to-top:hover { background: rgba(29, 29, 31, 0.78); }
+
+  .to-top:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 3px;
+  }
+
+  .to-top svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* `hidden` is on the element until the script takes over, so a JS-less
+     visitor never sees a button that cannot do anything. */
+  .to-top[hidden] { display: none; }
+</style>
+
+<script>
+  const button = document.querySelector<HTMLButtonElement>('[data-to-top]');
+
+  if (button) {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    // The script is running, so the control is usable — drop the no-JS guard.
+    button.hidden = false;
+
+    // Roughly one screenful down: far enough that the top is genuinely out of
+    // reach, so the button never competes with the hero.
+    const threshold = () => window.innerHeight * 0.9;
+
+    // Scroll fires far more often than paint, so the class toggle is deferred
+    // to an animation frame rather than run on every event.
+    let ticking = false;
+
+    const update = () => {
+      button.classList.toggle('is-visible', window.scrollY > threshold());
+      ticking = false;
+    };
+
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(update);
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+
+    button.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: reduce.matches ? 'auto' : 'smooth' });
+    });
+
+    update();
+  }
+</script>

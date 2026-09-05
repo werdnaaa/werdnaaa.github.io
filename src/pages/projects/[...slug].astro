@@ -114,6 +114,7 @@ const logo = logoFor(project.id);
   /**
      Markdown can carry <div data-youtube="VIDEO_ID"></div>. This upgrades each
      one into a poster that swaps itself for the real player on click.
+     Add data-start="SECONDS" to open the video part-way in.
    */
   document.querySelectorAll<HTMLElement>('[data-youtube]').forEach((host) => {
     const id = host.dataset.youtube;
@@ -147,8 +148,12 @@ const logo = logoFor(project.id);
 
     button.addEventListener('click', () => {
       const frame = document.createElement('iframe');
+      // Only whole seconds are valid, so a junk value is dropped rather than
+      // passed through to break the embed URL.
+      const start = Number(host.dataset.start);
+      const at = Number.isInteger(start) && start > 0 ? `&start=${start}` : '';
       // nocookie + autoplay, since the click is the user's intent to play.
-      frame.src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0`;
+      frame.src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0${at}`;
       frame.title = host.dataset.title ?? 'YouTube video player';
       frame.allow =
         'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
@@ -258,6 +263,19 @@ const logo = logoFor(project.id);
   }
 
   .body { padding-bottom: var(--section-y); }
+
+  /* Links are stripped bare globally (a { color: inherit; text-decoration:
+     none }) because most of them are cards and nav items. Inside body copy a
+     link has nothing but its styling to mark it, so put it back. */
+  .body :global(p a),
+  .body :global(li a) {
+    color: var(--link);
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+  }
+
+  .body :global(p a:hover),
+  .body :global(li a:hover) { text-decoration-thickness: 2px; }
 
   /* Justified body prose, with hyphenation so the browser breaks words
      instead of stretching word spacing into white rivers. */
