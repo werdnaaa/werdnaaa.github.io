@@ -3,6 +3,16 @@ import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import VideoHero from '../components/VideoHero.astro';
 import FountainTimeline from '../components/FountainTimeline.astro';
+import { Image } from 'astro:assets';
+
+import shooter1 from '../assets/fountains/fountain-shooter-1.jpg';
+import shooter2 from '../assets/fountains/fountain-shooter-2.jpg';
+import decoder1 from '../assets/fountains/fountain-decoder-1.webp';
+import decoder2 from '../assets/fountains/fountain-decoder-2.webp';
+import shaft1 from '../assets/fountains/fountain-magnetic-shaft-1.webp';
+import shaft2 from '../assets/fountains/fountain-magnetic-shaft-2.webp';
+import twin1 from '../assets/fountains/fountain-top-level-1.webp';
+import twin2 from '../assets/fountains/fountain-top-level-2.webp';
 
 const milestones = await getCollection('fountains', ({ data }) => !data.draft);
 
@@ -12,30 +22,34 @@ milestones.sort((a, b) => rank(a.data.year) - rank(b.data.year));
 
 // Placeholder spec table — replace the values, or delete the block.
 const specs = [
-  { label: 'Nozzles', value: '—' },
-  { label: 'Pumps', value: '—' },
-  { label: 'Control', value: '—' },
-  { label: 'Lighting', value: '—' },
-  { label: 'Audio sync', value: '—' },
-  { label: 'Water volume', value: '—' },
+  { label: 'Shooters', value: '13' },
+  { label: 'Oarsmen', value: '6' },
+  { label: 'Effect Types', value: '4'},
+  { label: 'Ring LEDs', value: '20' },
+  { label: 'Lighting', value: '50W' },
+  { label: 'Peak Power', value: '>700W' },
 ];
 
 const systems = [
   {
-    title: 'Hydraulics',
-    body: 'Placeholder — describe the pump layout, manifolds, nozzle types and how flow is regulated across the display.',
+    title: 'Shooters',
+    images: [shooter1, shooter2],
+    body: '13x 24V DC pumps shooting water to a maximum height of 2m. Each feeds water through a 6mm articulated plastic straw with its own rotating ball joint and bubble leveller to ensure a straight jet. Each pump also has its own addressable waterproof RGBW LED ring.',
   },
   {
-    title: 'Control electronics',
-    body: 'Placeholder — the controller, drivers, valve switching and how everything is wired back to the show computer.',
+    title: 'Control Electronics',
+    images: [decoder1, decoder2],
+    body: 'A single DMX to SPI decoder is able to drive four pumps. Each SPI decoder has a PCB board for power passthrough, an ON/OFF switch, XT30 outputs to the pumps for easy maintenance, and inbuilt flyback diode circuits to protect against the inductive loads.',
   },
   {
-    title: 'Show software',
-    body: 'Placeholder — how a track is analysed, how cues are authored, and how playback stays in sync with the audio.',
+    title: 'One-Axis Oarsmen',
+    images: [shaft1, shaft2],
+    body: 'The servo is hidden inside a splash-proof box. In order to transmit the axle rotation without water incursion, a magnetic shaft is used with an inner and outer rotating ring of 8 magnets, and two ceramic ball bearings between them. Each jet also has its own RGBW LED ring.',
   },
   {
-    title: 'Lighting',
-    body: 'Placeholder — fixture choice, colour mixing, and how lighting cues are tied to the same timeline as the water.',
+    title: 'Digital Twin',
+    images: [twin1, twin2],
+    body: 'A complete digital replica of the fountain exists within Solidworks, split into different subassemblies (shooters, oarsmen, scaffolding, etc). This makes it easy to track part changes, create bills of materials, and see if anything is spaced too close together.',
   },
 ];
 ---
@@ -46,28 +60,35 @@ const systems = [
   overlayNav
 >
   <VideoHero
-    eyebrow="Fountains"
-    title="Musical Dancing Fountains"
-    subtitle="A homemade water, light and sound display — built, rebuilt and refined since 2016."
+    src="/video/fountain-hero-2024.mp4"
+    poster="/posters/fountain-hero-2024.webp"
+    eyebrow="My Magnum Opus"
+    title="Homemade Musical Dancing Fountains"
+    subtitle="Proudly designed, built and refined since 2016."
     height="full"
   >
-    <a class="btn btn--light" href="#timeline">See the timeline</a>
+    <a class="btn btn--light" href="#overview">Overview</a>
+    <a class="btn btn--light" href="#timeline">Timeline</a>
+    <a class="btn btn--light" href="#architecture">Architecture</a>
   </VideoHero>
 
-  <section class="section">
+  <section class="section" id="overview">
     <div class="wrap">
       <div class="intro reveal">
-        <p class="eyebrow">Overview</p>
-        <h2>Water, light and music on one clock.</h2>
-        <p class="lede">
-          Placeholder introduction. Describe the display in two or three
-          sentences — what it does, roughly how big it is, and what makes it
-          interesting to build.
-        </p>
-        <p class="muted">
-          Replace this paragraph with the longer story: what started it, what
-          the hardest engineering problem turned out to be, and where it stands
-          today.
+        <p class="eyebrow">My Magnum Opus</p>
+        <h2>Homemade Musical Dancing Fountains</h2>
+        <p class="lede prose-justified">
+          I have been enthralled with musical dancing fountains since seeing the
+          Old Sentosa Musical Fountain as a kid. In 2016 I committed to a long term goal
+          that I would build a fully functional fountain display in my house, and I
+          have been tinkering and iteratively improving on my design ever since. What began
+          as four simple fish tank pumps in a $20 IKEA trough sitting in my parent's balcony
+          has grown over the years into the elaborate display today. The advent of 3D printing
+          and cheap PCB manufacturing has enabled me to iteratively develop and improve my
+          fountain at a pace that would never have been possible before. Lately, I have also 
+          been training Claude Opus to choreograph the fountains to the music for me, and I am
+          also attempting to develop a Windows-based fountain choreography software from scratch.
+          The future is limitless!
         </p>
       </div>
 
@@ -79,6 +100,16 @@ const systems = [
           </div>
         ))}
       </dl>
+
+      <div class="showreel reveal">
+        <iframe
+          src="https://www.youtube-nocookie.com/embed/t0cJkW6umuQ?rel=0"
+          title="Homemade musical dancing fountain show"
+          loading="lazy"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen
+        ></iframe>
+      </div>
     </div>
   </section>
 
@@ -87,11 +118,10 @@ const systems = [
       <header class="block-head reveal">
         <div>
           <p class="eyebrow">Timeline</p>
-          <h2>Year by year</h2>
+          <h2>The Fountain Over The Years</h2>
         </div>
         <p class="block-head__note muted">
-          Drag the slider, or use the arrow keys. Solid markers are years with
-          an entry.
+          Drag the slider, or use the arrow keys.
         </p>
       </header>
 
@@ -101,32 +131,94 @@ const systems = [
     </div>
   </section>
 
-  <section class="section">
+  <section class="section" id="architecture">
     <div class="wrap">
-      <p class="eyebrow reveal">Documentation</p>
+      <p class="eyebrow reveal">Architecture</p>
       <h2 class="reveal">Systems</h2>
+
+      <p class="muted prose-justified reveal">
+        Hardware and software solutions for commercial musical fountains often run into the hundreds
+        of thousands of dollars. A single Varionaut DMX pump from Oase can cost a five-figure sum, while
+        a robust choreography software such as Depence is impossibly beyond my budget. I set out to recreate
+        the highest quality fountain display at a fraction of the cost. I am extremely happy with what I have
+        accomplished as I have managed to create a relatively complicated and well-choreographed fountain for
+        less than 2,000 USD.
+      </p>
 
       <div class="grid grid--2 systems">
         {systems.map((system) => (
           <article class="system reveal">
             <h3 class="system__title">{system.title}</h3>
-            <p class="muted">{system.body}</p>
+            <p class="muted prose-justified">{system.body}</p>
+
+            <div class="system__shots">
+              {system.images.map((shot) => (
+                <Image
+                  src={shot}
+                  alt={system.title}
+                  widths={[640, 960, 1280]}
+                  sizes="(max-width: 860px) 92vw, 620px"
+                  loading="lazy"
+                  decoding="async"
+                />
+              ))}
+            </div>
           </article>
         ))}
       </div>
-
-      <p class="note">
-        Longer write-ups, wiring diagrams and photos go here. Drop images into
-        <code>/public/img</code> and short loops into <code>/public/video</code>.
-      </p>
     </div>
   </section>
 </Base>
 
 <style>
-  .intro { max-width: 62ch; }
-  .intro h2 { margin-bottom: 0.5em; text-wrap: balance; }
+  /* The heading stays on a short measure so it does not run as one long line,
+     but the body paragraphs are deliberately full-width — see .prose-justified. */
+  .intro { max-width: none; }
+  .intro h2 { max-width: 24ch; margin-bottom: 0.5em; text-wrap: balance; }
   .intro .lede { margin-bottom: 1em; }
+
+  /* Runs the full width of the wrap and justifies both edges, so there is no
+     ragged gap down the right. Hyphenation is what keeps justification from
+     opening rivers of whitespace between words at this measure. */
+  .prose-justified {
+    max-width: none;
+    text-align: justify;
+    hyphens: auto;
+  }
+
+  @supports (-webkit-hyphens: auto) {
+    .prose-justified { -webkit-hyphens: auto; }
+  }
+
+  /* Too narrow to justify without gappy word spacing. */
+  @media (max-width: 620px) {
+    .prose-justified {
+      text-align: left;
+      hyphens: manual;
+    }
+
+    @supports (-webkit-hyphens: auto) {
+      .prose-justified { -webkit-hyphens: manual; }
+    }
+  }
+
+  /* Full width of the wrap at a proper 16:9, rather than a small fixed box. */
+  .showreel {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    margin-top: clamp(2.5rem, 6vw, 4rem);
+    background: var(--bg-deep);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .showreel iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
 
   .specs {
     display: grid;
@@ -176,6 +268,8 @@ const systems = [
   .systems { margin-top: clamp(2rem, 4vw, 3rem); }
 
   .system {
+    display: flex;
+    flex-direction: column;
     padding: clamp(1.5rem, 3vw, 2rem);
     border: 1px solid var(--line-soft);
     border-radius: var(--radius);
@@ -188,17 +282,23 @@ const systems = [
     font-size: var(--step-1);
   }
 
-  .note {
-    max-width: var(--measure);
-    margin-top: clamp(2rem, 4vw, 3rem);
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--line);
-    font-size: var(--step--1);
-    color: var(--text-muted);
+  /* Stacked full width rather than side by side: these are CAD and PCB shots
+     whose detail is unreadable at half the card width. Every system photo is
+     1920x1080, so the 16:9 frame below fills exactly, with no letterbox. */
+  .system__shots {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    margin-top: auto;
+    padding-top: clamp(1.2rem, 2.5vw, 1.6rem);
   }
 
-  code {
-    font-family: var(--font-mono);
-    font-size: 0.92em;
+  .system__shots :global(img) {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-radius: calc(var(--radius) / 1.5);
+    background: var(--bg-alt);
   }
 </style>

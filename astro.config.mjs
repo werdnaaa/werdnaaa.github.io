@@ -8,7 +8,9 @@ import sitemap from '@astrojs/sitemap';
 // `base: '/repo-name'` here and prefix internal links with it.
 export default defineConfig({
   site: 'https://werdnaaa.github.io',
-  integrations: [sitemap()],
+  // The NewJeans page is unlisted: reachable from the footer, but kept out of
+  // the sitemap (and marked noindex on the page itself).
+  integrations: [sitemap({ filter: (page) => !page.includes('/newjeans') })],
   build: {
     // Emit /about/index.html rather than /about.html so URLs have no extension.
     format: 'directory',

@@ -1,0 +1,110 @@
+---
+import { getImage } from 'astro:assets';
+import { SITE } from '../site';
+import newjeans from '../assets/newjeans.jpg';
+
+/**
+ * Unlisted page — reachable from the footer, kept out of the nav and the
+ * sitemap, and marked noindex so it does not turn up in search results.
+ *
+ * Standalone rather than wrapped in Base: it is a single full-bleed image with
+ * one line over it, so the nav and footer chrome would only get in the way.
+ */
+const bg = await getImage({
+  src: newjeans,
+  width: Math.min(2000, newjeans.width),
+  format: 'webp',
+  quality: 72,
+});
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NewJeans Never Die — {SITE.name}</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+
+  <body>
+    <main class="stage">
+      <div class="stack">
+        <h1 class="title">NewJeans Never Die</h1>
+        <a class="back" href="/">&larr; Back to Home</a>
+      </div>
+    </main>
+
+    <style define:vars={{ bg: `url('${bg.src}')` }}>
+      :root {
+        --font: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+          Helvetica, Arial, sans-serif;
+      }
+
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+
+      /* Undimmed, as asked — the photo carries the page. */
+      .stage {
+        display: grid;
+        place-items: center;
+        min-height: 100svh;
+        padding: 1.5rem;
+        background-image: var(--bg);
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        font-family: var(--font);
+        text-align: center;
+      }
+
+      /* No scrim behind the type, so the weight of the shadow is what keeps
+         the line readable wherever it lands on the photo. */
+      .title {
+        margin: 0;
+        color: #fff;
+        font-size: clamp(2rem, 8vw, 5.5rem);
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        line-height: 1.05;
+        text-wrap: balance;
+        text-shadow:
+          0 2px 18px rgba(0, 0, 0, 0.55),
+          0 1px 4px rgba(0, 0, 0, 0.45);
+      }
+
+      /* Sits directly under the headline, as part of the centred block. */
+      .stack {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: clamp(1.25rem, 3vh, 2rem);
+      }
+
+      /* Translucent pane so the label stays legible over any part of the
+         photo, the same treatment the site's .btn--light uses over media. */
+      .back {
+        padding: 0.6em 1.4em;
+        color: #1d1d1f;
+        background: rgba(255, 255, 255, 0.55);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        border-radius: 100px;
+        backdrop-filter: blur(8px) saturate(140%);
+        font-size: 0.95rem;
+        letter-spacing: 0.02em;
+        text-decoration: none;
+        transition: background-color 0.25s ease;
+      }
+
+      @supports (-webkit-backdrop-filter: blur(1px)) {
+        .back { -webkit-backdrop-filter: blur(8px) saturate(140%); }
+      }
+
+      .back:hover { background: rgba(255, 255, 255, 0.92); }
+    </style>
+  </body>
+</html>

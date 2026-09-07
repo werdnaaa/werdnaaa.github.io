@@ -27,9 +27,10 @@ const contactBg = await getImage({
   quality: 66,
 });
 
+// Every project, newest first — the rail below shows three at a time and
+// scrolls to the rest, so nothing needs to be cut to keep the page tidy.
 const featured = (await getCollection('projects', ({ data }) => !data.draft))
-  .sort(sortProjects)
-  .slice(0, 3);
+  .sort(sortProjects);
 ---
 
 <Base overlayNav>
@@ -69,11 +70,41 @@ const featured = (await getCollection('projects', ({ data }) => !data.draft))
           <p class="eyebrow">What I've Been Cooking</p>
           <h2>Feature Projects</h2>
         </div>
-        <a class="link-arrow" href="/projects/">All projects</a>
+
+        <div class="block-head__side">
+          <a class="link-arrow" href="/projects/">All projects</a>
+
+          <div class="rail__nav" data-rail-nav hidden>
+            <button class="rail__btn" type="button" aria-label="Previous projects" data-rail-prev>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M15 4 L7 12 L15 20" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+            <button class="rail__btn" type="button" aria-label="More projects" data-rail-next>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 4 L17 12 L9 20" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+          </div>
+        </div>
       </header>
 
-      <div class="grid grid--3">
-        {featured.map((project) => <ProjectCard project={project} />)}
+      <div class="rail reveal" data-rail>
+        <div
+          class="rail__track"
+          data-rail-track
+          tabindex="0"
+          role="region"
+          aria-label="Featured projects"
+        >
+          {featured.map((project) => (
+            <div class="rail__item">
+              <ProjectCard project={project} />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   </section>
@@ -172,6 +203,93 @@ const featured = (await getCollection('projects', ({ data }) => !data.draft))
     margin-bottom: clamp(2rem, 5vw, 3.5rem);
   }
 
+  .block-head__side {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+  }
+
+  /* ---- Project rail ----
+     A scroll-snapped row rather than a wrapping grid: three cards on desktop,
+     the rest a scroll away, so adding projects never lengthens the home page.
+     Native overflow scrolling means trackpad, touch and keyboard all work
+     without JS; the buttons are an affordance on top of that. */
+  .rail {
+    /* Cards sit flush with the wrap, but the scroll runs past the gutters so
+       the next card is not clipped mid-air at the edge of the viewport. */
+    margin-inline: calc(var(--gutter) * -1);
+  }
+
+  .rail__track {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: calc((100% - 2 * var(--rail-gap)) / 3);
+    gap: var(--rail-gap);
+    padding-inline: var(--gutter);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--gutter);
+    scroll-behavior: smooth;
+    /* The buttons and the card hover lift are the affordance — a scrollbar
+       under the cards would just add noise. */
+    scrollbar-width: none;
+    --rail-gap: clamp(1.25rem, 3vw, 2.5rem);
+  }
+
+  .rail__track::-webkit-scrollbar { display: none; }
+
+  .rail__track:focus-visible {
+    outline: 2px solid var(--link);
+    outline-offset: 4px;
+  }
+
+  .rail__item { scroll-snap-align: start; }
+
+  /* Two up on tablets, and just over one on phones — the sliver of the next
+     card is what tells you the row scrolls. */
+  @media (max-width: 900px) {
+    .rail__track { grid-auto-columns: calc((100% - var(--rail-gap)) / 2); }
+  }
+
+  @media (max-width: 600px) {
+    .rail__track { grid-auto-columns: 82%; }
+  }
+
+  .rail__nav {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .rail__nav[hidden] { display: none; }
+
+  .rail__btn {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: border-color 0.2s var(--ease), background-color 0.2s var(--ease),
+      opacity 0.2s var(--ease);
+  }
+
+  .rail__btn:hover:not(:disabled) { border-color: var(--text); }
+  .rail__btn svg { width: 17px; height: 17px; }
+
+  .rail__btn:disabled {
+    opacity: 0.32;
+    cursor: default;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rail__track { scroll-behavior: auto; }
+  }
+
   .block-head h2 { margin-bottom: 0; }
 
   /* This block alone is centred — eyebrow, heading, body and button. */
@@ -209,3 +327,45 @@ const featured = (await getCollection('projects', ({ data }) => !data.draft))
     }
   }
 </style>
+
+<script>
+  // The rail scrolls natively; this only adds the buttons and keeps their
+  // state honest. Everything degrades to a plain scrollable row without JS,
+  // which is why the nav ships hidden and is revealed here.
+  document.querySelectorAll<HTMLElement>('[data-rail]').forEach((rail) => {
+    const track = rail.querySelector<HTMLElement>('[data-rail-track]');
+    const nav = document.querySelector<HTMLElement>('[data-rail-nav]');
+    const prev = document.querySelector<HTMLButtonElement>('[data-rail-prev]');
+    const next = document.querySelector<HTMLButtonElement>('[data-rail-next]');
+
+    if (!track || !nav || !prev || !next) return;
+
+    // One card plus its gap, measured rather than hard-coded, so the same
+    // code works across the three breakpoints.
+    const step = () => {
+      const first = track.firstElementChild as HTMLElement | null;
+      if (!first) return track.clientWidth;
+      const gap = parseFloat(getComputedStyle(track).columnGap) || 0;
+      return first.getBoundingClientRect().width + gap;
+    };
+
+    const overflows = () => track.scrollWidth - track.clientWidth > 1;
+
+    const sync = () => {
+      // Nothing to scroll to when every card already fits.
+      nav.hidden = !overflows();
+      // Sub-pixel widths mean the end is never exactly scrollWidth.
+      const max = track.scrollWidth - track.clientWidth - 1;
+      prev.disabled = track.scrollLeft <= 0;
+      next.disabled = track.scrollLeft >= max;
+    };
+
+    prev.addEventListener('click', () => track.scrollBy({ left: -step() }));
+    next.addEventListener('click', () => track.scrollBy({ left: step() }));
+
+    track.addEventListener('scroll', sync, { passive: true });
+    window.addEventListener('resize', sync, { passive: true });
+
+    sync();
+  });
+</script>

@@ -5,6 +5,21 @@ import VideoHero from '../components/VideoHero.astro';
 import fiveInch from '../assets/fpv/5inch.jpg';
 import sevenInch from '../assets/fpv/7inch.jpg';
 import podium from '../assets/fpv/4X1A7763.jpg';
+import hanniPoster from '../assets/fpv/hanni-poster.jpg';
+import track1 from '../assets/fpv/track-1.webp';
+import track2 from '../assets/fpv/track-2.webp';
+import track3 from '../assets/fpv/track-3.webp';
+import track4 from '../assets/fpv/track-4.webp';
+import track5 from '../assets/fpv/track-5.webp';
+
+// Painted immediately while the loop downloads, and left showing if a device
+// refuses to play it at all — a still frame rather than an empty grey box.
+const heroPoster = await getImage({
+  src: hanniPoster,
+  width: 1280,
+  format: 'webp',
+  quality: 62,
+});
 
 // Backdrop for the achievements table. It sits behind a 50% black scrim and
 // is never the subject, so it can take heavier compression than a photo
@@ -94,6 +109,27 @@ interface Achievement {
   result: string;
 }
 
+/**
+ * Flag per country, looked up from the tail of the location string rather
+ * than repeated on all 23 rows — "Kuala Lumpur, Malaysia" and a bare
+ * "Singapore" both resolve. An unlisted country just gets no flag, so adding
+ * a row with a new country degrades quietly instead of breaking the table.
+ */
+const FLAGS: Record<string, string> = {
+  Australia: '🇦🇺',
+  Canada: '🇨🇦',
+  India: '🇮🇳',
+  Malaysia: '🇲🇾',
+  Poland: '🇵🇱',
+  Singapore: '🇸🇬',
+  'South Korea': '🇰🇷',
+  'United Kingdom': '🇬🇧',
+  'United States': '🇺🇸',
+};
+
+const flagFor = (location: string) =>
+  FLAGS[location.split(',').pop()?.trim() ?? ''];
+
 // Newest first.
 const achievements: Achievement[] = [
   { year: '2026', location: 'Kuala Lumpur, Malaysia', event: 'MyAERO Whoop Race', result: '1st Place, TQ' },
@@ -132,9 +168,42 @@ interface Track {
   image?: ImageMetadata;
 }
 
-// Placeholder until the real tracks go in.
 const tracks: Track[] = [
-  { velocidrone: '—', race: '—', location: '—', year: '—' },
+  {
+    location: 'Moscow, Russia',
+    year: 2026,
+    race: 'Whoopmania Season 2 Track 2',
+    velocidrone: 'WhoopMANIA S2 Track 2',
+    image: track1,
+  },
+  {
+    location: 'Phoenix, USA',
+    year: 2026,
+    race: 'WEBLEED500 Team Race',
+    velocidrone: 'Whooptopia 2026 Team Racing Track',
+    image: track2,
+  },
+  {
+    location: 'Hungary',
+    year: 2026,
+    race: 'Hungarian OE Cup 15',
+    velocidrone: 'Tiny Drones OE Cup 15',
+    image: track3,
+  },
+  {
+    location: 'Dayton, USA',
+    year: 2026,
+    race: 'USAF Museum Race 2026',
+    velocidrone: '2026 Micro Drone Race at the US Air Force Museum',
+    image: track4,
+  },
+  {
+    location: 'Warsaw, Poland',
+    year: 2025,
+    race: 'Whoop of Poland Championship',
+    velocidrone: 'Track Unavailable',
+    image: track5,
+  },
 ];
 
 interface Setup {
@@ -179,6 +248,7 @@ const setups: Setup[] = [
 >
   <VideoHero
     src="/video/hanni.mp4"
+    poster={heroPoster.src}
     eyebrow="The world of"
     title="FPV Drone Racing"
     subtitle="I design, build and tune FPV drones. I then take
@@ -317,7 +387,12 @@ const setups: Setup[] = [
             {achievements.map((row) => (
               <tr>
                 <td class="wins__year">{row.year}</td>
-                <td>{row.location}</td>
+                <td class="wins__place">
+                  {row.location}
+                  {flagFor(row.location) && (
+                    <span class="wins__flag" aria-hidden="true">{flagFor(row.location)}</span>
+                  )}
+                </td>
                 <td>{row.event}</td>
                 <td>{row.result}</td>
               </tr>
@@ -354,19 +429,19 @@ const setups: Setup[] = [
 
               <dl class="track__meta">
                 <div class="track__field">
-                  <dt>Location</dt>
+                  <dt>Location, Country</dt>
                   <dd>{track.location}</dd>
                 </div>
                 <div class="track__field">
-                  <dt>Year</dt>
+                  <dt>Year Designed</dt>
                   <dd>{track.year}</dd>
                 </div>
                 <div class="track__field">
-                  <dt>Race</dt>
+                  <dt>Name of Race</dt>
                   <dd>{track.race}</dd>
                 </div>
                 <div class="track__field">
-                  <dt>Velocidrone track</dt>
+                  <dt>Velocidrone Track Name</dt>
                   <dd>{track.velocidrone}</dd>
                 </div>
               </dl>
@@ -678,6 +753,16 @@ const setups: Setup[] = [
 
   .wins__year {
     font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  /* Emoji flags come from the system font, so name the colour fonts
+     explicitly — otherwise the body stack can render them as flat glyphs. */
+  .wins__flag {
+    margin-left: 0.45em;
+    font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+    font-size: 1.05em;
+    line-height: 1;
     white-space: nowrap;
   }
 

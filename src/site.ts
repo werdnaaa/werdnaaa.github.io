@@ -31,5 +31,7 @@ export const SITE = {
     { label: 'LinkedIn', href: 'https://www.linkedin.com/in/werdnapay/' },
     { label: 'YouTube', href: 'https://youtube.com/c/werdnafpv' },
     { label: 'Instagram', href: 'https://www.instagram.com/werdna_fpv/' },
+    // Unlisted internal page, not a social profile — see pages/newjeans.astro.
+    { label: 'NewJeans', href: '/newjeans/' },
   ],
 } as const;

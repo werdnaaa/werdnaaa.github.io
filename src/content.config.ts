@@ -82,19 +82,56 @@ const flights = defineCollection({
  */
 const fountains = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/fountains' }),
-  schema: z.object({
-    year: z.union([z.number().int().min(2016), z.literal('future')]),
-    title: z.string(),
-    /** One line shown as the milestone headline. */
-    summary: z.string(),
-    /** Still image in /public/img. Falls back to a placeholder panel. */
-    image: z.string().optional(),
-    /** Optional short muted loop in /public/video, used instead of `image`. */
-    video: z.string().optional(),
-    /** Short bullet list of what was achieved that year. */
-    achievements: z.array(z.string()).default([]),
-    draft: z.boolean().default(false),
-  }),
+  /**
+   * `image()` rather than a plain path string: photos live in
+   * src/assets/fountains/ and go through the build-time image pipeline, so a
+   * camera-sized original is never what ships. Paths are relative to the
+   * markdown file, and a missing file fails the build instead of turning into
+   * a broken <img> at runtime.
+   */
+  schema: ({ image }) =>
+    z.object({
+      year: z.union([z.number().int().min(2016), z.literal('future')]),
+      title: z.string(),
+      /** One line shown as the milestone headline. */
+      summary: z.string(),
+      /** Still image in src/assets/. Falls back to a placeholder panel. */
+      image: image().optional(),
+      /** Optional short muted loop in /public/video, used instead of `image`. */
+      video: z.string().optional(),
+      /** Short bullet list of what was achieved that year. */
+      achievements: z.array(z.string()).default([]),
+      /**
+       * Centre the summary instead of justifying it. Suits a short standalone
+       * line under a full-width photo, where justification leaves a ragged,
+       * lopsided last line.
+       */
+      centered: z.boolean().default(false),
+      /**
+       * A year with a panel but no actual progress — a hiatus. It still reads
+       * as a stop on the slider, but its tick stays hollow, so the solid dots
+       * mark only the years the fountain actually moved forward.
+       */
+      hiatus: z.boolean().default(false),
+      /**
+       * A year that saw more than one distinct build gets an entry per strand,
+       * rendered side by side. When set, this replaces the single title/summary/
+       * image/achievements above, which stay the shape for a one-strand year.
+       */
+      entries: z
+        .array(
+          z.object({
+            title: z.string(),
+            summary: z.string(),
+            image: image().optional(),
+            video: z.string().optional(),
+            achievements: z.array(z.string()).default([]),
+            centered: z.boolean().default(false),
+          }),
+        )
+        .optional(),
+      draft: z.boolean().default(false),
+    }),
 });
 
 /**

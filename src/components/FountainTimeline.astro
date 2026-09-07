@@ -1,4 +1,5 @@
 ---
+import { Image } from 'astro:assets';
 import type { CollectionEntry } from 'astro:content';
 
 interface Props {
@@ -27,6 +28,41 @@ const stops: Stop[] = [
 // Index milestones by stop key so each slider position can find its entry.
 const byKey = new Map(milestones.map((m) => [String(m.data.year), m]));
 
+// A solid tick means the fountain actually progressed that year. A hiatus year
+// still gets a panel and a slider stop, but its dot stays hollow.
+const isMilestone = (key: string) => {
+  const entry = byKey.get(key);
+  return Boolean(entry) && !entry!.data.hiatus;
+};
+
+/**
+ * Eras of the build, drawn as a band above the slider. Declared by year rather
+ * than by slider index so they stay correct as the timeline grows a stop each
+ * January. `upcoming` draws dashed: it is the phase that has not started, and
+ * is what tells a reader that 2026 closes Phase Two rather than trailing off.
+ */
+const PHASE_SPANS: { label: string; from: string; to: string; upcoming?: boolean }[] = [
+  { label: 'Phase One', from: '2016', to: '2017' },
+  { label: 'Break · R&D', from: '2018', to: '2022' },
+  { label: 'Phase Two', from: '2023', to: '2026' },
+  { label: 'Phase Three', from: '2026', to: 'future', upcoming: true },
+];
+
+const indexOfStop = (key: string) => stops.findIndex((s) => s.key === key);
+const lastIndex = stops.length - 1;
+const at = (i: number) => (i / lastIndex) * 100;
+
+// Drop any phase the slider does not reach yet, and clamp one that runs past
+// its end, so a shorter timeline degrades instead of drawing off the track.
+const phases = PHASE_SPANS.flatMap((span) => {
+  const from = indexOfStop(span.from);
+  if (from < 0) return [];
+  const rawTo = indexOfStop(span.to);
+  const to = rawTo < 0 ? lastIndex : rawTo;
+  if (to <= from) return [];
+  return [{ ...span, from, to, left: at(from), width: at(to) - at(from) }];
+});
+
 // Open on the earliest stop that actually has content.
 const initialIndex = Math.max(
   0,
@@ -35,77 +71,26 @@ const initialIndex = Math.max(
 ---
 
 <div class="tl" data-timeline>
-  <!-- Stage: every panel is rendered at build time; JS reveals one at a time.
-       With JS disabled the initial panel stays visible rather than nothing. -->
-  <div class="tl__stage">
-    {
-      stops.map((stop, i) => {
-        const entry = byKey.get(stop.key);
-        return (
-          <article
-            class="panel"
-            data-panel={String(i)}
-            hidden={i !== initialIndex}
-            aria-hidden={i !== initialIndex ? 'true' : 'false'}
-          >
-            <div class="panel__media">
-              {entry?.data.video ? (
-                <video
-                  poster={entry.data.image}
-                  muted
-                  loop
-                  playsinline
-                  preload="none"
-                  aria-hidden="true"
-                >
-                  <source src={entry.data.video} type="video/mp4" />
-                </video>
-              ) : entry?.data.image ? (
-                <img src={entry.data.image} alt={entry.data.title} loading="lazy" decoding="async" />
-              ) : (
-                <div class="panel__placeholder" aria-hidden="true">
-                  <span>{stop.label}</span>
-                </div>
-              )}
-            </div>
-
-            <div class="panel__body">
-              <p class="panel__year">{stop.label}</p>
-
-              {entry ? (
-                <>
-                  <h3 class="panel__title">{entry.data.title}</h3>
-                  <p class="panel__summary">{entry.data.summary}</p>
-                  {entry.data.achievements.length > 0 && (
-                    <ul class="panel__list">
-                      {entry.data.achievements.map((item) => (
-                        <li>{item}</li>
-                      ))}
-                    </ul>
-                  )}
-                </>
-              ) : (
-                <>
-                  <h3 class="panel__title panel__title--empty">Nothing logged yet</h3>
-                  <p class="panel__summary">
-                    Add <code>src/content/fountains/{stop.key}.md</code> with{' '}
-                    <code>year: {stop.key === 'future' ? '"future"' : stop.key}</code> and this
-                    panel fills itself in.
-                  </p>
-                </>
-              )}
-            </div>
-          </article>
-        );
-      })
-    }
-  </div>
-
   <!-- Control: a real range input, so keyboard and touch work for free. -->
   <div class="tl__control">
     <div class="tl__readout">
       <output class="tl__output" for="tl-range" data-output>{stops[initialIndex]?.label}</output>
-      <p class="tl__hint">Drag to travel through the build</p>
+    </div>
+
+    <div class="tl__phases" aria-hidden="true">
+      {
+        phases.map((phase) => (
+          <div
+            class:list={['phase', { 'phase--upcoming': phase.upcoming }]}
+            style={`left: ${phase.left.toFixed(4)}%; width: ${phase.width.toFixed(4)}%`}
+            data-phase-from={String(phase.from)}
+            data-phase-to={String(phase.to)}
+          >
+            <span class="phase__label">{phase.label}</span>
+            <span class="phase__bar"></span>
+          </div>
+        ))
+      }
     </div>
 
     <div class="tl__track">
@@ -132,11 +117,12 @@ const initialIndex = Math.max(
         {
           stops.map((stop, i) => (
             <button
-              class:list={['tick', { 'tick--filled': byKey.has(stop.key), 'tick--future': stop.key === 'future' }]}
+              class:list={['tick', { 'tick--filled': isMilestone(stop.key), 'tick--future': stop.key === 'future' }]}
               type="button"
               tabindex="-1"
               data-tick={String(i)}
               title={stop.label}
+              style={`--at: ${((i / (stops.length - 1)) * 100).toFixed(4)}%`}
             >
               <span class="tick__dot"></span>
               <span class="tick__label">{stop.short}</span>
@@ -146,6 +132,106 @@ const initialIndex = Math.max(
       </div>
     </div>
   </div>
+  <!-- Stage: every panel is rendered at build time; JS reveals one at a time.
+       With JS disabled the initial panel stays visible rather than nothing. -->
+  <div class="tl__stage">
+    {
+      stops.map((stop, i) => {
+        const entry = byKey.get(stop.key);
+
+        // A year is a list of strands. `entries` when the year had several,
+        // otherwise the single top-level milestone folded into the same shape,
+        // so there is one thing to render either way.
+        const strands = entry
+          ? entry.data.entries ?? [
+              {
+                title: entry.data.title,
+                summary: entry.data.summary,
+                image: entry.data.image,
+                video: entry.data.video,
+                achievements: entry.data.achievements,
+                centered: entry.data.centered,
+              },
+            ]
+          : [];
+
+        return (
+          <article
+            class="panel"
+            data-panel={String(i)}
+            hidden={i !== initialIndex}
+            aria-hidden={i !== initialIndex ? 'true' : 'false'}
+          >
+            <p class="panel__year">{stop.label}</p>
+
+            {strands.length > 0 ? (
+              <div class="panel__cols" style={`--cols: ${strands.length}`}>
+                {strands.map((strand) => (
+                  <section class="entry">
+                    <h3 class="entry__title">{strand.title}</h3>
+
+                    <div
+                      class="entry__media"
+                      style={
+                        strand.image
+                          ? `--ratio: ${strand.image.width} / ${strand.image.height}`
+                          : undefined
+                      }
+                    >
+                      {strand.video ? (
+                        <video poster={strand.image?.src} muted loop playsinline preload="none" aria-hidden="true">
+                          <source src={strand.video} type="video/mp4" />
+                        </video>
+                      ) : strand.image ? (
+                        <Image
+                          src={strand.image}
+                          alt={strand.title}
+                          widths={[480, 720, 1080]}
+                          sizes="(max-width: 820px) 100vw, 520px"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      ) : (
+                        <div class="entry__placeholder" aria-hidden="true">
+                          <span>{stop.label}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* set:html so a summary can carry inline markup — a link
+                        on a phrase, say. Authored in this repo, so there is no
+                        untrusted input to sanitise. */}
+                    <p
+                      class:list={['entry__summary', { 'entry__summary--center': strand.centered }]}
+                      set:html={strand.summary}
+                    ></p>
+
+                    {strand.achievements.length > 0 && (
+                      <ul class="entry__list">
+                        {strand.achievements.map((item) => (
+                          <li>{item}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </section>
+                ))}
+              </div>
+            ) : (
+              <div class="panel__empty">
+                <h3 class="entry__title">Nothing logged yet</h3>
+                <p class="entry__summary">
+                  Add <code>src/content/fountains/{stop.key}.md</code> with{' '}
+                  <code>year: {stop.key === 'future' ? '"future"' : stop.key}</code> and this
+                  panel fills itself in.
+                </p>
+              </div>
+            )}
+          </article>
+        );
+      })
+    }
+  </div>
+
 </div>
 
 <style>
@@ -164,30 +250,67 @@ const initialIndex = Math.max(
     overflow: hidden;
   }
 
+  /* Title, then photo, then description — one column, so a year reads top to
+     bottom with the slider already above it. */
   .panel {
-    display: grid;
-    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-    min-height: 380px;
+    display: flex;
+    flex-direction: column;
+    padding: clamp(1.5rem, 3vw, 2.25rem);
     animation: panel-in 0.45s var(--ease);
   }
 
-  @media (max-width: 780px) {
-    .panel { grid-template-columns: 1fr; }
-  }
+  /* MUST come after the rule above. The `hidden` attribute only works through
+     the UA's `[hidden] { display: none }`, and any author `display` beats a UA
+     rule — so `display: flex` alone renders every year at once, stacked, no
+     matter that the markup marks them hidden. */
+  .panel[hidden] { display: none; }
 
   @keyframes panel-in {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: none; }
   }
 
-  .panel__media {
-    position: relative;
-    background: var(--bg-alt);
-    min-height: 240px;
+  /* Side-by-side strands on desktop, stacked on narrow screens. */
+  .panel__cols {
+    display: grid;
+    grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr));
+    gap: clamp(1.5rem, 3vw, 2.75rem);
+    align-items: start;
   }
 
-  .panel__media img,
-  .panel__media video {
+  @media (max-width: 820px) {
+    .panel__cols { grid-template-columns: 1fr; }
+  }
+
+  .entry__title {
+    margin-bottom: 0;
+    font-size: var(--step-1);
+    text-align: center;
+    text-wrap: balance;
+  }
+
+  /* The frame takes the shape of whatever is inside it, so the media fills it
+     exactly — no grey letterbox, and equally no cropping when a shot is not
+     16:9. Photos pass their real dimensions in as --ratio; the 16/9 fallback
+     covers video, where the clip's size is not known at build time (every
+     fountain clip is 640x360).
+
+     aspect-ratio holds here only because the media inside is absolutely
+     positioned: an in-flow child taller than the ratio would override it. */
+  .entry__media {
+    position: relative;
+    aspect-ratio: var(--ratio, 16 / 9);
+    margin-block: clamp(1rem, 2.5vw, 1.5rem);
+    background: var(--bg-alt);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  /* cover, not contain: the frame already matches the media's ratio, so the two
+     would frame it identically, but cover leaves no hairline of background
+     showing along an edge from sub-pixel rounding. */
+  .entry__media :global(img),
+  .entry__media video {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -195,7 +318,7 @@ const initialIndex = Math.max(
     object-fit: cover;
   }
 
-  .panel__placeholder {
+  .entry__placeholder {
     display: grid;
     place-items: center;
     width: 100%;
@@ -204,22 +327,22 @@ const initialIndex = Math.max(
       repeating-linear-gradient(45deg, var(--bg-alt) 0 14px, #ededf0 14px 28px);
   }
 
-  .panel__placeholder span {
+  .entry__placeholder span {
     font-size: var(--step-3);
     font-weight: 700;
     letter-spacing: -0.02em;
     color: #c9c9d0;
   }
 
-  .panel__body {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: clamp(1.75rem, 4vw, 3rem);
+  .panel__empty {
+    max-width: var(--measure);
+    margin-inline: auto;
+    text-align: center;
   }
 
   .panel__year {
-    margin: 0 0 0.6em;
+    margin: 0 0 1.2em;
+    text-align: center;
     font-size: var(--step--1);
     font-weight: 700;
     letter-spacing: 0.18em;
@@ -227,26 +350,63 @@ const initialIndex = Math.max(
     color: var(--text-muted);
   }
 
-  .panel__title {
-    margin-bottom: 0.4em;
-    font-size: var(--step-2);
-    text-wrap: balance;
-  }
-
-  .panel__title--empty { color: var(--text-muted); }
-
-  .panel__summary {
+  /* Justified with hyphenation — without the hyphens, justifying a column
+     this narrow opens rivers of white space between words. */
+  .entry__summary {
     color: var(--text-muted);
-    text-wrap: pretty;
+    text-align: justify;
+    hyphens: auto;
   }
 
-  .panel__summary code {
+  @supports (-webkit-hyphens: auto) {
+    .entry__summary { -webkit-hyphens: auto; }
+  }
+
+  /* Too narrow to justify cleanly. */
+  @media (max-width: 620px) {
+    .entry__summary {
+      text-align: left;
+      hyphens: manual;
+      text-wrap: pretty;
+    }
+
+    @supports (-webkit-hyphens: auto) {
+      .entry__summary { -webkit-hyphens: manual; }
+    }
+  }
+
+  /* Centred, on a narrower measure than the photo above it. Justification is
+     what the override is really undoing: on a couple of lines it strands a
+     short, ragged last line and reads worse than plain centring. */
+  .entry__summary--center {
+    max-width: 60ch;
+    margin-inline: auto;
+    text-align: center;
+    hyphens: manual;
+  }
+
+  @supports (-webkit-hyphens: auto) {
+    .entry__summary--center { -webkit-hyphens: manual; }
+  }
+
+  /* Links are stripped bare globally, so restate them inside body copy.
+     :global is required — the summary is injected with set:html, so its <a>
+     never gets the scoping attribute a plain selector would compile to. */
+  .entry__summary :global(a) {
+    color: var(--link);
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+  }
+
+  .entry__summary :global(a:hover) { text-decoration-thickness: 2px; }
+
+  .entry__summary code {
     font-family: var(--font-mono);
     font-size: 0.88em;
     color: var(--text);
   }
 
-  .panel__list {
+  .entry__list {
     margin: 1.2em 0 0;
     padding: 1.2em 0 0;
     border-top: 1px solid var(--line-soft);
@@ -255,12 +415,12 @@ const initialIndex = Math.max(
     gap: 0.55rem;
   }
 
-  .panel__list li {
+  .entry__list li {
     position: relative;
     padding-left: 1.3em;
   }
 
-  .panel__list li::before {
+  .entry__list li::before {
     content: "";
     position: absolute;
     left: 0;
@@ -272,6 +432,12 @@ const initialIndex = Math.max(
   }
 
   /* ---- Control ---- */
+
+  .tl__control {
+    /* Hoisted from .tl__track: the era band is a sibling of the track and has
+       to share the same half-thumb inset, and custom properties inherit. */
+    --thumb: 22px;
+  }
 
   .tl__readout {
     display: flex;
@@ -290,22 +456,77 @@ const initialIndex = Math.max(
     line-height: 1;
   }
 
-  .tl__hint {
-    margin: 0;
-    font-size: var(--step--1);
-    color: var(--text-muted);
-  }
-
   .tl__track {
     position: relative;
     padding-block: 0.5rem 0;
+    /* --thumb is inherited from .tl__control; the note below explains why the
+       ticks, the fill and the era band are all inset by half of it. */
+    /* A native range thumb's centre travels from half-a-thumb in to
+       half-a-thumb from the far end — it never reaches the true 0% or 100%.
+       The ticks and the fill are inset by this same half-thumb so all three
+       share one coordinate system; without it the dots drift out of line with
+       the handle, worst at the two ends and closest in the middle. */
+  }
+
+  /* Era band. Inset by the same half-thumb as the ticks so a phase edge lines
+     up with the year it names, rather than with the raw track edge. */
+  .tl__phases {
+    position: relative;
+    height: 2.1rem;
+    /* Same half-thumb inset as .tl__ticks, so a bracket edge lands on the year
+       it names. Sits above .tl__track, outside it, so the absolutely
+       positioned .tl__fill keeps its alignment with the range input. */
+    margin: 0 calc(var(--thumb) / 2) 0.35rem;
+  }
+
+  .phase {
+    position: absolute;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .phase__label {
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    white-space: nowrap;
+    transition: color 0.2s var(--ease);
+  }
+
+  /* Three sides only, opening downward — it reads as a bracket over the span
+     of years it covers without adding another full rule to the layout. */
+  .phase__bar {
+    width: 100%;
+    height: 5px;
+    border: 1px solid var(--line);
+    border-bottom: 0;
+  }
+
+  /* The phase that has not begun: dashed, and dimmer than the rest. */
+  .phase--upcoming .phase__bar { border-style: dashed; }
+  .phase--upcoming .phase__label { opacity: 0.7; }
+
+  .phase.is-active .phase__label {
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  .phase.is-active .phase__bar { border-color: var(--text); }
+
+  @media (max-width: 620px) {
+    .phase__label { font-size: 0.5rem; letter-spacing: 0.06em; }
   }
 
   /* Progress fill sits behind the native input's transparent track. */
   .tl__fill {
     position: absolute;
-    left: 0;
+    left: calc(var(--thumb) / 2);
     top: calc(0.5rem + 13px);
+    width: calc((100% - var(--thumb)) * var(--progress, 0));
     height: 2px;
     background: var(--text);
     pointer-events: none;
@@ -337,6 +558,9 @@ const initialIndex = Math.max(
   .tl__range::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
+    /* Border must sit inside the 22px, or the thumb is really 28px and the
+       --thumb inset above no longer matches it. */
+    box-sizing: border-box;
     width: 22px;
     height: 22px;
     margin-top: -10px;
@@ -348,6 +572,7 @@ const initialIndex = Math.max(
   }
 
   .tl__range::-moz-range-thumb {
+    box-sizing: border-box;
     width: 22px;
     height: 22px;
     border-radius: 50%;
@@ -358,18 +583,24 @@ const initialIndex = Math.max(
 
   .tl__range:active::-webkit-slider-thumb { scale: 1.12; }
 
+  /* Ticks are placed at exact percentages rather than being flex-distributed:
+     equal-width flex columns centre their dot at (i + 0.5)/n, which is not
+     where the handle sits at i/(n - 1). */
   .tl__ticks {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 0.4rem;
+    position: relative;
+    min-height: 2.3rem;
+    margin: 0.4rem calc(var(--thumb) / 2) 0;
   }
 
   .tick {
+    position: absolute;
+    top: 0;
+    left: var(--at);
+    translate: -50% 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 0.5rem;
-    flex: 1;
     padding: 0;
     background: none;
     border: 0;
@@ -422,6 +653,7 @@ const initialIndex = Math.max(
     const fill = root.querySelector<HTMLElement>('[data-fill]');
     const panels = root.querySelectorAll<HTMLElement>('[data-panel]');
     const ticks = root.querySelectorAll<HTMLButtonElement>('[data-tick]');
+    const phaseEls = root.querySelectorAll<HTMLElement>('[data-phase-from]');
 
     if (!range) return;
 
@@ -440,13 +672,24 @@ const initialIndex = Math.max(
         tick.classList.toggle('is-active', i === index);
       });
 
+      // The upcoming phase shares its left edge with the end of Phase Two, so
+      // an inclusive test would light both at that year. Treat it as active
+      // only past that boundary.
+      phaseEls.forEach((phase) => {
+        const from = Number(phase.dataset.phaseFrom);
+        const to = Number(phase.dataset.phaseTo);
+        const upcoming = phase.classList.contains('phase--upcoming');
+        const active = upcoming ? index > from && index <= to : index >= from && index <= to;
+        phase.classList.toggle('is-active', active);
+      });
+
       const label = labels[index] ?? String(index);
       if (output) output.textContent = label;
       range.setAttribute('aria-valuetext', label);
 
       if (fill) {
         const max = Number(range.max) || 1;
-        fill.style.width = `${(index / max) * 100}%`;
+        fill.style.setProperty('--progress', String(index / max));
       }
 
       // Only the visible clip should be running.
